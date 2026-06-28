@@ -1,6 +1,6 @@
 # NenOS
 
-This repository contains files for operating system "NenOS" making on assembly language.
+This repository contains files for operating system "NenOS" on assembly language.
 
 ## Commands
 - ABOUT - displaying information about the system.
