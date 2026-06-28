@@ -1,4 +1,4 @@
-# Parabola
+# NenOS
 
 This repository contains files for operating system "NenOS" making on assembly language.
 
