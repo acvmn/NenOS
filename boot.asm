@@ -25,6 +25,7 @@ print:
     jmp print
 
 done:
+    ret
 
 disk_load:
     mov si, dap

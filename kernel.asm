@@ -54,12 +54,6 @@ check:
     mov bl, 0
 
     mov si, command
-    mov di, command_about
-    mov cx, 6
-    repe cmpsb
-    je print_about
-
-    mov si, command
     mov di, command_cls
     mov cx, 4
     repe cmpsb
@@ -70,12 +64,6 @@ check:
     mov cx, 5
     repe cmpsb
     je print_help
-
-    mov si, command
-    mov di, command_mem
-    mov cx, 4
-    repe cmpsb
-    je mem
 
     mov si, command
     mov di, command_reboot
@@ -103,12 +91,6 @@ check:
     mov dl, 0
     jmp input
 
-print_about:
-    mov si, about
-    call print
-
-    jmp return
-
 cls:
     mov ah, 0x00
     mov al, 0x03
@@ -121,16 +103,6 @@ print_help:
     call print
 
     jmp return
-
-mem:
-    lodsb
-    mov ah, 0x0e
-    int 0x10
-    mov ah, 0x01
-    int 0x16
-    cmp al, 0
-    jne exit
-    jmp mem
 
 reboot:
     jmp 0xFFFF:0x0000
@@ -215,17 +187,14 @@ return:
 
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 13, 10, 0
 console: db "NenOS> ", 0
+help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. HELP - displaying available commands.", 10, 13, "  3. REBOOT - reboot the computer.", 10, 13, "  4. TIME - launches the watch app.", 10, 13, 0
+error: db "Unknown command.", 10, 13, 0
 backspace: db 8, " ", 8, 0
 enter: db 10, 13, 0
-command_about: db "about", 0
 command_cls: db "cls", 0
 command_help: db "help", 0
-command_mem: db "mem", 0
 command_reboot: db "reboot", 0
 command_time: db "time", 0
-about: db "System:", 10, 13, "  1. Name: NenOS", 10, 13, "  2. Version: Alpha 1.0", 10, 13, "  3. Made by: Nenboard", 10, 13, 0
-help: db "Available Commands:", 10, 13, "  1. ABOUT - displaying information about the system.", 10, 13, "  2. CLS - clear the screen.", 10, 13, "  3. HELP - displaying available commands.", 10, 13, "  4. MEM - launches the memory app.", 10, 13, "  5. REBOOT - reboot the computer.", 10, 13, "  6. TIME - launches the watch app.", 10, 13, 0
-error: db "Unknown command!", 10, 13, 0
 command: db ""
 
 times 8192-($-$$) db 0
