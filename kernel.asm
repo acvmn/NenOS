@@ -29,10 +29,17 @@ input:
     je back
     cmp al, 13
     je check
+    cmp al, "a"
+    jl skip
+    cmp al, "z"
+    jg skip
     stosb
     mov ah, 0x0e
     int 0x10
     inc dl
+    jmp input
+
+skip:
     jmp input
 
 back:
