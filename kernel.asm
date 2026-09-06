@@ -140,11 +140,11 @@ time:
 
     mov dl, dh
     call convert
+
     mov ah, 0x01
     int 0x16
-    cmp al, 0
-    jne exit
-    jmp time
+    jz time
+    jmp exit
 
 convert:
     mov al, dl
