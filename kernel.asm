@@ -242,7 +242,7 @@ ready:
     mov di, document
     mov dl, 0
     jmp write
-    
+
 back_write:
     cmp dl, 0
     je write
@@ -282,6 +282,9 @@ write:
     jmp write
 
 save:
+    mov al, 0
+    stosb
+
     xor ax, ax
     mov ds, ax
     mov es, ax
