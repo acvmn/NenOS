@@ -73,6 +73,12 @@ check:
     je print_help
 
     mov si, command
+    mov di, command_read
+    mov cx, 5
+    repe cmpsb
+    je read
+
+    mov si, command
     mov di, command_reboot
     mov cx, 7
     repe cmpsb
@@ -83,6 +89,12 @@ check:
     mov cx, 5
     repe cmpsb
     je time
+
+    mov si, command
+    mov di, command_write
+    mov cx, 6
+    repe cmpsb
+    je ready
 
     cmp dl, 0
     je return
@@ -112,7 +124,7 @@ print_help:
     jmp return
 
 reboot:
-    jmp 0xFFFF:0x0000
+    jmp 0xffff:0x0000
 
 time:
     mov ah, 0x01
@@ -183,6 +195,7 @@ exit:
 return:
     mov si, console
     call print
+
     mov si, 0
     mov bx, ds
     mov es, bx
@@ -192,16 +205,122 @@ return:
     mov dl, 0
     jmp input
 
-welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 13, 10, 0
+read:
+    mov si, readed
+    call print
+
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, 18
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
+    jc cls
+
+    mov si, 0x9e00
+    call print
+
+    mov si, enter
+    call print
+
+    jmp return
+
+ready:
+    mov si, esc
+    call print
+
+    mov si, 0
+    mov bx, ds
+    mov es, bx
+    mov dx, 0
+    mov [document], dx
+    mov di, document
+    mov dl, 0
+    jmp write
+    
+back_write:
+    cmp dl, 0
+    je write
+    mov si, backspace
+    dec di
+    mov byte [di], 0
+    call print
+    dec dl
+    jmp write
+
+next:
+    mov si, enter
+    call print
+
+    mov al, 10
+    stosb
+    mov al, 13
+    stosb
+
+    mov dl, 0
+
+    jmp write
+
+write:
+    mov ah, 0x00
+    int 0x16
+    cmp al, 8
+    je back_write
+    cmp al, 13
+    je next
+    cmp al, 27
+    je save
+    stosb
+    mov ah, 0x0e
+    int 0x10
+    inc dl
+    jmp write
+
+save:
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov si, document
+    mov cx, 512
+    mov bx, document
+    mov ah, 0x03
+    mov al, 1
+    mov ch, 0
+    mov cl, 18
+    mov dl, 0x80
+    mov dh, 0
+    int 0x13
+    jc cls
+
+    mov si, enter
+    call print
+
+    mov si, saved
+    call print
+
+    jmp return
+
+welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
-help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. HELP - displaying available commands.", 10, 13, "  3. REBOOT - reboot the computer.", 10, 13, "  4. TIME - launches the watch app.", 10, 13, 0
+esc: db "Press <ESC> to save.", 10, 13, 0
+saved: db "The document was saved.", 10, 13, 0
+readed: db "Document:", 10, 13, 0
+help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. HELP - displaying available commands.", 10, 13, "  3. READ - read the document.", 10, 13, "  4. REBOOT - reboot the computer.", 10, 13, "  5. TIME - launches the watch app.", 10, 13, "  6. WRITE - write the document.", 10, 13, 0
 error: db "Unknown command.", 10, 13, 0
 backspace: db 8, " ", 8, 0
 enter: db 10, 13, 0
 command_cls: db "cls", 0
 command_help: db "help", 0
+command_read: db "read", 0
 command_reboot: db "reboot", 0
 command_time: db "time", 0
-command: db ""
+command_write: db "write", 0
+command: db 0
+document: db 0
 
 times 8192-($-$$) db 0
