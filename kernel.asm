@@ -126,10 +126,29 @@ print_help:
 reboot:
     jmp 0xffff:0x0000
 
+exit:
+    mov ah, 0x00
+    int 0x16
+    mov dx, 0x3d4
+    mov al, 0x0a
+    out dx, al
+    inc dx
+    in al, dx
+    and al, 0xdf
+    out dx, al
+    mov si, enter
+    call print
+    jmp return
+
 time:
-    mov ah, 0x01
-    mov cx, 0x2000
-    int 0x10
+    mov dx, 0x3d4
+    mov al, 0x0a
+    out dx, al
+    inc dx
+    in al, dx
+    or al, 0x20
+    out dx, al
+    dec dx
 
     mov al, 13
     mov ah, 0x0e
@@ -182,16 +201,6 @@ convert:
     mov al, 0
     ret
 
-exit:
-    mov ah, 0x00
-    int 0x16
-    mov ah, 0x01
-    mov cx, 0x0607
-    int 0x10
-    mov si, enter
-    call print
-    jmp return
-
 return:
     mov si, console
     call print
@@ -220,7 +229,7 @@ read:
     mov dh, 0
     mov bx, 0x9e00
     int 0x13
-    jc cls
+    jc disk_error
 
     mov si, 0x9e00
     call print
@@ -298,7 +307,7 @@ save:
     mov dl, 0x80
     mov dh, 0
     int 0x13
-    jc cls
+    jc disk_error
 
     mov si, enter
     call print
@@ -308,13 +317,19 @@ save:
 
     jmp return
 
+disk_error:
+    mov si, disk
+    call print
+    jmp return
+
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
 esc: db "Press <ESC> to save.", 10, 13, 0
 saved: db "The document was saved.", 10, 13, 0
 readed: db "Document:", 10, 13, 0
-help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. HELP - displaying available commands.", 10, 13, "  3. READ - read the document.", 10, 13, "  4. REBOOT - reboot the computer.", 10, 13, "  5. TIME - launches the watch app.", 10, 13, "  6. WRITE - write the document.", 10, 13, 0
+disk: db "Disk error.", 10, 13, 0
 error: db "Unknown command.", 10, 13, 0
+help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. HELP - displaying available commands.", 10, 13, "  3. READ - read the document.", 10, 13, "  4. REBOOT - reboot the computer.", 10, 13, "  5. TIME - launches the watch app.", 10, 13, "  6. WRITE - write the document.", 10, 13, 0
 backspace: db 8, " ", 8, 0
 enter: db 10, 13, 0
 command_cls: db "cls", 0
