@@ -10,8 +10,6 @@ This repository contains files for operating system "NenOS" on assembly language
 - TIME - launches the watch app.
 - WRITE - write the document.
 
-**The commands are written in alphabetical order.**
-
 > The interface is simple and straightforward.
 
 ![alt Preview](preview.png)
