@@ -215,8 +215,6 @@ return:
     jmp input
 
 read:
-    mov si, readed
-    call print
 
     xor ax, ax
     mov ds, ax
@@ -231,6 +229,9 @@ read:
     int 0x13
     jc disk_error
 
+    mov si, readed
+    call print
+
     mov si, 0x9e00
     call print
 
@@ -240,6 +241,11 @@ read:
     jmp return
 
 ready:
+    mov ah, 0x01
+    mov dl, 0x80
+    int 0x13
+    jc disk_error
+
     mov si, esc
     call print
 
