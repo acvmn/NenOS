@@ -111,8 +111,19 @@ check:
     jmp input
 
 cls:
-    mov ah, 0x00
-    mov al, 0x03
+    mov ah, 0x06
+    mov al, 0x00
+    mov ch, 0
+    mov cl, 0
+    mov dh, 0x24
+    mov dl, 0x80
+    mov bh, 0x07
+    int 0x10
+
+    mov ah, 0x02
+    mov bh, 0
+    mov dl, 0
+    mov dh, 0
     int 0x10
     
     jmp return
@@ -215,6 +226,9 @@ return:
     jmp input
 
 read:
+    mov dx, 0
+    mov [0x9e00], dx
+
     xor ax, ax
     mov ds, ax
     mov es, ax
@@ -251,30 +265,7 @@ ready:
     mov dl, 0
     jmp write
 
-back_write:
-    cmp dl, 0
-    je write
-    mov si, backspace
-    dec di
-    mov byte [di], 0
-    call print
-    dec dl
-    jmp write
-
-next:
-    mov si, enter
-    call print
-    
-    mov al, 10
-    stosb
-    mov al, 13
-    stosb
-    
-    mov dl, 0
-    
-    jmp write
-
-write:
+    write:
     mov ah, 0x00
     int 0x16
     cmp al, 8
@@ -314,6 +305,29 @@ save:
     call print
     
     jmp return
+
+back_write:
+    cmp dl, 0
+    je write
+    mov si, backspace
+    dec di
+    mov byte [di], 0
+    call print
+    dec dl
+    jmp write
+
+next:
+    mov si, enter
+    call print
+    
+    mov al, 10
+    stosb
+    mov al, 13
+    stosb
+    
+    mov dl, 0
+    
+    jmp write
 
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
