@@ -225,33 +225,6 @@ return:
     mov dl, 0
     jmp input
 
-read:
-    mov dx, 0
-    mov [0x9e00], dx
-
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
-    mov ah, 0x02
-    mov al, 1
-    mov ch, 0
-    mov cl, 18
-    mov dl, 0x80
-    mov dh, 0
-    mov bx, 0x9e00
-    int 0x13
-    
-    mov si, readed
-    call print
-    
-    mov si, 0x9e00
-    call print
-    
-    mov si, enter
-    call print
-    
-    jmp return
-
 ready:
     mov si, esc
     call print
@@ -328,6 +301,33 @@ next:
     mov dl, 0
     
     jmp write
+
+read:
+    mov dx, 0
+    mov [0x9e00], dx
+
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, 18
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
+    
+    mov si, readed
+    call print
+    
+    mov si, 0x9e00
+    call print
+    
+    mov si, enter
+    call print
+    
+    jmp return
 
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
