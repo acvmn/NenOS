@@ -215,7 +215,6 @@ return:
     jmp input
 
 read:
-
     xor ax, ax
     mov ds, ax
     mov es, ax
@@ -242,17 +241,10 @@ read:
 
 ready:
     xor ax, ax
-    mov ds, ax
     mov es, ax
-    mov si, document
-    mov cx, 512
-    mov bx, document
-    mov ah, 0x03
-    mov al, 1
-    mov ch, 0
-    mov cl, 18
+    mov bx, ax
     mov dl, 0x80
-    mov dh, 0
+    mov ah, 0x10
     int 0x13
     jc disk_error
 
