@@ -235,10 +235,10 @@ ready:
     mov dx, 0
     mov [document], dx
     mov di, document
-    mov dl, 0
+    mov dx, 0
     jmp write
 
-    write:
+write:
     mov ah, 0x00
     int 0x16
     cmp al, 8
@@ -250,7 +250,9 @@ ready:
     stosb
     mov ah, 0x0e
     int 0x10
-    inc dl
+    inc dx
+    cmp dx, 255
+    je back_write
     jmp write
 
 save:
@@ -280,13 +282,13 @@ save:
     jmp return
 
 back_write:
-    cmp dl, 0
+    cmp dx, 0
     je write
     mov si, backspace
     dec di
     mov byte [di], 0
     call print
-    dec dl
+    dec dx
     jmp write
 
 next:
@@ -298,7 +300,7 @@ next:
     mov al, 13
     stosb
     
-    mov dl, 0
+    mov dx, 0
     
     jmp write
 
