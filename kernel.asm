@@ -33,6 +33,8 @@ input:
     jl skip
     cmp al, "z"
     jg skip
+    cmp dl, 255
+    je input
     stosb
     mov ah, 0x0e
     int 0x10
