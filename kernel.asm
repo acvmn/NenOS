@@ -25,21 +25,59 @@ done:
 input:
     mov ah, 0x00
     int 0x16
+
+    cmp al, " "
+    je space
+
     cmp al, 8
     je back
+
     cmp al, 13
     je check
+
+    call find
+
     cmp al, "a"
     jl skip
     cmp al, "z"
     jg skip
+
     cmp dl, 255
     je input
+
     stosb
     mov ah, 0x0e
     int 0x10
     inc dl
     jmp input
+
+space:
+    stosb
+    mov ah, 0x0e
+    int 0x10
+    inc dl
+    jmp input
+
+argc:
+    mov al, dh
+    stosb
+    mov ah, 0x0e
+    int 0x10
+    inc dl
+    jmp input
+
+find:
+    push di
+    mov dh, al
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    pop di
+    je argc
+    mov al, dh
+    ret
 
 skip:
     jmp input
@@ -67,6 +105,12 @@ check:
     mov cx, 4
     repe cmpsb
     je cls
+
+    mov si, command
+    mov di, command_echo
+    mov cx, 4
+    repe cmpsb
+    je echo
     
     mov si, command
     mov di, command_help
@@ -128,6 +172,26 @@ cls:
     mov dh, 0
     int 0x10
     
+    jmp return
+
+found:
+    mov si, di
+    call print
+
+    mov si, enter
+    call print
+
+    jmp return
+
+echo:
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    je found
+    mov si, enter
+    call print
     jmp return
 
 print_help:
@@ -338,11 +402,12 @@ console: db "NenOS> ", 0
 esc: db "Press <ESC> to save.", 10, 13, 0
 saved: db "The document was saved.", 10, 13, 0
 readed: db "Document:", 10, 13, 0
+help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. ECHO <?> - print text to screen.", 10, 13, "  3. HELP - displaying available commands.", 10, 13, "  4. READ - read the document.", 10, 13, "  5. REBOOT - reboot the computer.", 10, 13, "  6. TIME - launches the watch app.", 10, 13, "  7. WRITE - write the document.", 10, 13, 0
 error: db "Unknown command.", 10, 13, 0
-help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. HELP - displaying available commands.", 10, 13, "  3. READ - read the document.", 10, 13, "  4. REBOOT - reboot the computer.", 10, 13, "  5. TIME - launches the watch app.", 10, 13, "  6. WRITE - write the document.", 10, 13, 0
 backspace: db 8, " ", 8, 0
 enter: db 10, 13, 0
 command_cls: db "cls", 0
+command_echo: db "echo"
 command_help: db "help", 0
 command_read: db "read", 0
 command_reboot: db "reboot", 0
