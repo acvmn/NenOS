@@ -52,6 +52,14 @@ input:
     jmp input
 
 space:
+    push di
+    mov si, command
+    mov di, command_echo
+    mov cx, 4
+    repe cmpsb
+    pop di
+    jne input
+
     stosb
     mov ah, 0x0e
     int 0x10
@@ -302,6 +310,7 @@ ready:
     mov [document], dx
     mov di, document
     mov dx, 0
+    mov cx, 0
     jmp write
 
 write:
@@ -309,16 +318,17 @@ write:
     int 0x16
     cmp al, 8
     je back_write
-    cmp al, 13
-    je next
     cmp al, 27
     je save
+    cmp cx, 511
+    je write
+    cmp al, 13
+    je line
     stosb
     mov ah, 0x0e
     int 0x10
     inc dx
-    cmp dx, 255
-    je back_write
+    inc cx
     jmp write
 
 save:
@@ -355,9 +365,10 @@ back_write:
     mov byte [di], 0
     call print
     dec dx
+    dec cx
     jmp write
 
-next:
+line:
     mov si, enter
     call print
     
@@ -367,6 +378,7 @@ next:
     stosb
     
     mov dx, 0
+    inc cx
     
     jmp write
 
@@ -399,10 +411,10 @@ read:
 
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
+help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. ECHO <?> - print text to screen.", 10, 13, "  3. HELP - displaying available commands.", 10, 13, "  4. READ - read the document.", 10, 13, "  5. REBOOT - reboot the computer.", 10, 13, "  6. TIME - launches the watch app.", 10, 13, "  7. WRITE - write the document.", 10, 13, 0
 esc: db "Press <ESC> to save.", 10, 13, 0
 saved: db "The document was saved.", 10, 13, 0
 readed: db "Document:", 10, 13, 0
-help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. ECHO <?> - print text to screen.", 10, 13, "  3. HELP - displaying available commands.", 10, 13, "  4. READ - read the document.", 10, 13, "  5. REBOOT - reboot the computer.", 10, 13, "  6. TIME - launches the watch app.", 10, 13, "  7. WRITE - write the document.", 10, 13, 0
 error: db "Unknown command.", 10, 13, 0
 backspace: db 8, " ", 8, 0
 enter: db 10, 13, 0
