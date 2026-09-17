@@ -181,7 +181,7 @@ programer:
     cmp dl, 0
     je return
     
-    mov si, syntax_error
+    mov si, error
     call print
     mov si, console
     call print
@@ -274,18 +274,6 @@ run:
 
     jmp loop
 
-loop:
-   lodsb
-   push si
-   cmp al, 10
-   je check
-   cmp al, 0
-   je stop
-   pop si
-   stosb
-   inc dl
-   jmp loop
-
 step:
     mov ah, 0x03
     mov bh, 0
@@ -309,7 +297,29 @@ step:
 stop:
     mov al, 0x00
     mov [running], al
+
+    mov al, [command]
+    cmp al, 0
+    je null 
+
     jmp check
+
+null:
+    mov si, enter
+    call print
+    jmp return
+
+loop:
+   lodsb
+   push si
+   cmp al, 10
+   je check
+   cmp al, 0
+   je stop
+   pop si
+   stosb
+   inc dl
+   jmp loop
 
 exit:
     mov ah, 0x00
@@ -520,7 +530,6 @@ esc: db "Press <ESC> to save.", 10, 13, 0
 saved: db "The document was saved.", 10, 13, 0
 readed: db "Document:", 10, 13, 0
 error: db "Unknown command.", 10, 13, 0
-syntax_error: db "Syntax error.", 10, 13, 0
 backspace: db 8, " ", 8, 0
 enter: db 10, 13, 0
 command_cls: db "cls", 0
