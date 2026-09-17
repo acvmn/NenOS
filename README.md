@@ -13,13 +13,17 @@ This repository contains files for operating system "NenOS" on assembly language
 - WRITE - write the document.
 
 You can also write your own programs, save them, and run them. Example of a program:
-> cls
-> echo Current Time:
-> time
+```
+cls
+echo Current Time:
+time
+```
 This program starts the clock.
 
 You can use any commands from <help> to write a program, which allows you to create loops, for example:
-> echo LOOP
-> run
+```
+echo LOOP
+run
+```
 
 ![alt Preview](preview.png)
