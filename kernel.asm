@@ -137,6 +137,12 @@ check:
     mov cx, 7
     repe cmpsb
     je reboot
+
+    mov si, command
+    mov di, command_run
+    mov cx, 4
+    repe cmpsb
+    je run
     
     mov si, command
     mov di, command_time
@@ -149,11 +155,33 @@ check:
     mov cx, 6
     repe cmpsb
     je ready
+
+    mov al, 0xff
+    cmp [running], al
+    je programer
     
     cmp dl, 0
     je return
     
     mov si, error
+    call print
+    mov si, console
+    call print
+    mov si, 0
+    mov bx, ds
+    mov es, bx
+    mov di, command
+    mov dl, 0
+    jmp input
+
+programer:
+    mov al, 0x00
+    mov [running], al
+
+    cmp dl, 0
+    je return
+    
+    mov si, syntax_error
     call print
     mov si, console
     call print
@@ -210,6 +238,78 @@ print_help:
 
 reboot:
     jmp 0xffff:0x0000
+
+run:
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+
+    mov ah, 0x02
+    mov bh, 0
+    dec dh
+    int 0x10
+
+    mov si, 0
+    mov bx, ds
+    mov es, bx
+    mov dx, 0
+    mov [command], dx
+    mov di, command
+    mov dl, 0
+
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, 18
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
+    mov si, 0x9e00
+    mov al, 0xff
+    mov [running], al
+
+    jmp loop
+
+loop:
+   lodsb
+   push si
+   cmp al, 10
+   je check
+   cmp al, 0
+   je stop
+   pop si
+   stosb
+   inc dl
+   jmp loop
+
+step:
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+
+    mov ah, 0x02
+    mov bh, 0
+    dec dh
+    int 0x10
+
+    pop si
+    mov bx, ds
+    mov es, bx
+    mov dx, 0
+    mov [command], dx
+    mov di, command
+    mov dl, 0
+    inc si
+    jmp loop
+
+stop:
+    mov al, 0x00
+    mov [running], al
+    jmp check
 
 exit:
     mov ah, 0x00
@@ -285,19 +385,6 @@ convert:
     
     mov al, 0
     ret
-
-return:
-    mov si, console
-    call print
-    
-    mov si, 0
-    mov bx, ds
-    mov es, bx
-    mov dx, 0
-    mov [command], dx
-    mov di, command
-    mov dl, 0
-    jmp input
 
 ready:
     mov si, esc
@@ -409,13 +496,31 @@ read:
     
     jmp return
 
+return:
+    mov al, 0xff
+    cmp [running], al
+    je step
+
+    mov si, console
+    call print
+    
+    mov si, 0
+    mov bx, ds
+    mov es, bx
+    mov dx, 0
+    mov [command], dx
+    mov di, command
+    mov dl, 0
+    jmp input
+
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
-help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. ECHO <?> - print text to screen.", 10, 13, "  3. HELP - displaying available commands.", 10, 13, "  4. READ - read the document.", 10, 13, "  5. REBOOT - reboot the computer.", 10, 13, "  6. TIME - launches the watch app.", 10, 13, "  7. WRITE - write the document.", 10, 13, 0
+help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. ECHO <?> - print text to screen.", 10, 13, "  3. HELP - displaying available commands.", 10, 13, "  4. READ - read the document.", 10, 13, "  5. REBOOT - reboot the computer.", 10, 13, "  6. RUN - run the program.", 10, 13, "  7. TIME - launches the watch app.", 10, 13, "  8. WRITE - write the document.", 10, 13, 0
 esc: db "Press <ESC> to save.", 10, 13, 0
 saved: db "The document was saved.", 10, 13, 0
 readed: db "Document:", 10, 13, 0
 error: db "Unknown command.", 10, 13, 0
+syntax_error: db "Syntax error.", 10, 13, 0
 backspace: db 8, " ", 8, 0
 enter: db 10, 13, 0
 command_cls: db "cls", 0
@@ -423,8 +528,10 @@ command_echo: db "echo"
 command_help: db "help", 0
 command_read: db "read", 0
 command_reboot: db "reboot", 0
+command_run: db "run", 0
 command_time: db "time", 0
 command_write: db "write", 0
+running: db 0x00
 command: db 0
 document: db 0
 
