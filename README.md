@@ -1,6 +1,6 @@
 # NenOS
 
-This repository contains files for operating system "NenOS" on assembly language.
+This repository contains files for operating system "NenOS" on assembly language. NenOS is an operating system written in NASM assembly language. It runs in real mode (x16) using BIOS interrupts. It has a simple file system and a built‑in LEN language interpreter.
 
 ## Commands
 - CLS - clear the screen.
@@ -12,7 +12,7 @@ This repository contains files for operating system "NenOS" on assembly language
 - TIME - launches the watch app.
 - WRITE - write the document.
 
-You can also write your own programs, save them, and run them. Example of a program:
+You can also write your own programs, save them, and run them. To run the program, enter RUN. After that, the OS will read the file and execute the commands from it sequentially. Example of a program:
 ```
 cls
 echo Current Time:
@@ -26,6 +26,6 @@ You can use any commands from <help> to write a program, which allows you to cre
 echo LOOP
 run
 ```
-To exit the loop, press any key. If the current command is time, press &lt;ESC&gt;.
+To exit the loop, press any key. If the current command is TIME, press &lt;ESC&gt;.
 
 ![alt Preview](preview.png)
