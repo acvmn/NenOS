@@ -4,7 +4,7 @@ This repository contains files for operating system "NenOS" on assembly language
 
 ## Commands
 - CLS - clear the screen.
-- ECHO <?> - print text to screen.
+- ECHO &lt;?&gt; - print text to screen.
 - HELP - displaying available commands.
 - READ - read the document.
 - REBOOT - reboot the computer.
@@ -26,6 +26,6 @@ You can use any commands from <help> to write a program, which allows you to cre
 echo LOOP
 run
 ```
-To exit the loop, press any key. If the current command is time, press <ESC>.
+To exit the loop, press any key. If the current command is time, press &lt;ESC&gt;.
 
 ![alt Preview](preview.png)
