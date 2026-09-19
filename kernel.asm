@@ -292,7 +292,11 @@ step:
     mov di, command
     mov dl, 0
     inc si
-    jmp loop
+
+    mov ah, 0x01
+    int 0x16
+    jz loop
+    jmp break
 
 stop:
     mov al, 0x00
@@ -322,6 +326,15 @@ loop:
    jmp loop
 
 exit:
+    mov si, enter
+    call print
+    mov al, 0x00
+    mov [running], al
+    jmp return
+
+break:
+    cmp al, 27
+    je exit
     mov ah, 0x00
     int 0x16
     mov dx, 0x3d4
@@ -370,7 +383,7 @@ time:
     mov ah, 0x01
     int 0x16
     jz time
-    jmp exit
+    jmp break
 
 convert:
     mov al, dl
@@ -397,7 +410,7 @@ convert:
     ret
 
 ready:
-    mov si, esc
+    mov si, press_esc
     call print
 
     mov si, 0
@@ -526,7 +539,7 @@ return:
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
 help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. ECHO <?> - print text to screen.", 10, 13, "  3. HELP - displaying available commands.", 10, 13, "  4. READ - read the document.", 10, 13, "  5. REBOOT - reboot the computer.", 10, 13, "  6. RUN - run the program.", 10, 13, "  7. TIME - launches the watch app.", 10, 13, "  8. WRITE - write the document.", 10, 13, 0
-esc: db "Press <ESC> to save.", 10, 13, 0
+press_esc: db "Press <ESC> to save.", 10, 13, 0
 saved: db "The document was saved.", 10, 13, 0
 readed: db "Document:", 10, 13, 0
 error: db "Unknown command.", 10, 13, 0
