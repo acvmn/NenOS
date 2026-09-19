@@ -513,6 +513,10 @@ read:
     jmp return
 
 return:
+    mov al, 0xff
+    cmp [running], al
+    je step
+
     mov dx, 0x3d4
     mov al, 0x0a
     out dx, al
@@ -520,10 +524,6 @@ return:
     in al, dx
     and al, 0xdf
     out dx, al
-
-    mov al, 0xff
-    cmp [running], al
-    je step
 
     mov si, console
     call print
