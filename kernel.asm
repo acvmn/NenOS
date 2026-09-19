@@ -337,13 +337,6 @@ break:
     je exit
     mov ah, 0x00
     int 0x16
-    mov dx, 0x3d4
-    mov al, 0x0a
-    out dx, al
-    inc dx
-    in al, dx
-    and al, 0xdf
-    out dx, al
     mov si, enter
     call print
     jmp return
@@ -520,6 +513,14 @@ read:
     jmp return
 
 return:
+    mov dx, 0x3d4
+    mov al, 0x0a
+    out dx, al
+    inc dx
+    in al, dx
+    and al, 0xdf
+    out dx, al
+
     mov al, 0xff
     cmp [running], al
     je step
