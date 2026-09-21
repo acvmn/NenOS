@@ -284,15 +284,11 @@ calc:
     sub al, "0"
 
     mov bl, [command + 6]
-    cmp al, "+"
-    jl calc_error
-    cmp al, "/"
-    jg calc_error
 
     mov ah, [command + 7]
-    cmp al, "0"
+    cmp ah, "0"
     jl calc_error
-    cmp al, "9"
+    cmp ah, "9"
     jg calc_error
     sub ah, "0"
 
