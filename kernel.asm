@@ -238,7 +238,11 @@ calc:
     mov bh, 0
     mov si, command
     add si, 5
+    mov cl, 0
     call calc_first
+
+    cmp dl, 0
+    je calc_error
 
     mov al, bh
     mov ah, 0
@@ -259,7 +263,7 @@ calc:
     cmp cl, "/"
     je calc_div
 
-    jmp one_calc
+    jmp calc_error
 
 calc_error:
     mov si, syntax
@@ -267,6 +271,9 @@ calc_error:
     jmp return
 
 action_add:
+    cmp cl, 0
+    je calc_error
+    mov dl, 0
     mov ah, 0
     push ax
     mov al, bl
@@ -283,6 +290,9 @@ action_add:
     jmp calc_second
 
 action_sub:
+    cmp cl, 0
+    je calc_error
+    mov dl, 0
     mov ah, 0
     push ax
     mov al, bl
@@ -298,6 +308,9 @@ action_sub:
     jmp calc_second
 
 action_mul:
+    cmp cl, 0
+    je calc_error
+    mov dl, 0
     mov ah, 0
     push ax
     mov al, bl
@@ -313,6 +326,9 @@ action_mul:
     jmp calc_second
 
 action_div:
+    cmp cl, 0
+    je calc_error
+    mov dl, 0
     mov ah, 0
     push ax
     mov al, bl
@@ -335,30 +351,19 @@ calc_second:
 
     lodsb
 
-    cmp al, " "
-    je calc_error
-
     cmp al, 0
     je done
 
+    mov dl, al
+
+    cmp al, "0"
+    jl calc_error
+    cmp al, "9"
+    jg calc_error
     sub al, "0"
     add bh, al
 
     jmp calc_second
-
-one_calc:
-    mov al, bl
-    mov ah, 0
-    mov ch, 10
-    div ch
-    mov bl, al
-
-    mov al, bl
-    mov ah, 0
-    call number
-    mov si, enter
-    call print
-    jmp return
 
 calc_first:
     mov al, bl
@@ -367,9 +372,6 @@ calc_first:
     mov bl, al
 
     lodsb
-
-    cmp al, " "
-    je calc_error
 
     cmp al, "+"
     je action_add
@@ -380,10 +382,12 @@ calc_first:
     cmp al, "/"
     je action_div
 
+    mov cl, al
+
     cmp al, "0"
-    jl one_calc
+    jl calc_error
     cmp al, "9"
-    jg one_calc
+    jg calc_error
     sub al, "0"
     add bl, al
 
