@@ -22,6 +22,38 @@ print:
 done:
     ret
 
+zero:
+    mov al, "0"
+    mov ah, 0x0e
+    int 0x10
+    ret
+
+number:
+    cmp ax, 0
+    je zero
+    mov bx, 0
+    push bx
+    jmp push_number
+
+push_number:
+    cmp ax, 0
+    je pop_number
+    mov bl, 10
+    div bl
+    push ax
+    mov ah, 0
+    jmp push_number
+
+pop_number:
+    pop ax
+    cmp ax, 0
+    je done
+    mov al, ah
+    add al, "0"
+    mov ah, 0x0e
+    int 0x10
+    jmp pop_number
+
 input:
     mov ah, 0x00
     int 0x16
@@ -54,20 +86,23 @@ input:
 space:
     push di
     mov si, command
+    mov di, command_calc
+    mov cx, 4
+    repe cmpsb
+    pop di
+    je argc
+
+    push di
+    mov si, command
     mov di, command_echo
     mov cx, 4
     repe cmpsb
     pop di
-    jne input
+    je argc
 
-    stosb
-    mov ah, 0x0e
-    int 0x10
-    inc dl
     jmp input
 
 argc:
-    mov al, dh
     stosb
     mov ah, 0x0e
     int 0x10
@@ -83,8 +118,8 @@ find:
     mov cl, dl
     repne scasb
     pop di
-    je argc
     mov al, dh
+    je argc
     ret
 
 skip:
@@ -107,7 +142,13 @@ check:
     mov si, enter
     call print
     mov bl, 0
-    
+
+    mov si, command
+    mov di, command_calc
+    mov cx, 4
+    repe cmpsb
+    je calc
+
     mov si, command
     mov di, command_cls
     mov cx, 4
@@ -191,6 +232,84 @@ programer:
     mov di, command
     mov dl, 0
     jmp input
+
+action_add:
+    add al, ah
+    mov ah, 0
+    call number
+    mov si, enter
+    call print
+    jmp return
+
+action_sub:
+    sub al, ah
+    mov ah, 0
+    call number
+    mov si, enter
+    call print
+    jmp return
+
+action_mul:
+    mul ah
+    mov ah, 0
+    call number
+    mov si, enter
+    call print
+    jmp return
+
+action_div:
+    mov bl, ah
+    mov ah, 0
+    div bl
+    mov ah, 0
+    call number
+    mov si, enter
+    call print
+    jmp return
+
+calc_error:
+    mov al, "0"
+    mov ah, 0x0e
+    int 0x10
+    mov si, enter
+    call print
+    jmp return
+
+calc:
+    mov al, [command + 5]
+    cmp al, "0"
+    jl calc_error
+    cmp al, "9"
+    jg calc_error
+    sub al, "0"
+
+    mov bl, [command + 6]
+    cmp al, "+"
+    jl calc_error
+    cmp al, "/"
+    jg calc_error
+
+    mov ah, [command + 7]
+    cmp al, "0"
+    jl calc_error
+    cmp al, "9"
+    jg calc_error
+    sub ah, "0"
+
+    cmp bl, "+"
+    je action_add
+    cmp bl, "-"
+    je action_sub
+    cmp bl, "*"
+    je action_mul
+    cmp bl, "/"
+    je action_div
+
+    mov ax, 0
+    call number
+    mov si, enter
+    call print
+    jmp return
 
 cls:
     mov ah, 0x06
@@ -539,13 +658,14 @@ return:
 
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
-help: db "Available Commands:", 10, 13, "  1. CLS - clear the screen.", 10, 13, "  2. ECHO <?> - print text to screen.", 10, 13, "  3. HELP - displaying available commands.", 10, 13, "  4. READ - read the document.", 10, 13, "  5. REBOOT - reboot the computer.", 10, 13, "  6. RUN - run the program.", 10, 13, "  7. TIME - launches the watch app.", 10, 13, "  8. WRITE - write the document.", 10, 13, 0
+help: db "Available Commands:", 10, 13, "  1. CALC <?> - calculate.", 10, 13, "  2. CLS - clear the screen.", 10, 13, "  3. ECHO <?> - print text to screen.", 10, 13, "  4. HELP - displaying available commands.", 10, 13, "  5. READ - read the document.", 10, 13, "  6. REBOOT - reboot the computer.", 10, 13, "  7. RUN - run the program.", 10, 13, "  8. TIME - launches the watch app.", 10, 13, "  9. WRITE - write the document.", 10, 13, 0
 press_esc: db "Press <ESC> to save.", 10, 13, 0
 saved: db "The document was saved.", 10, 13, 0
 readed: db "Document:", 10, 13, 0
 error: db "Unknown command.", 10, 13, 0
 backspace: db 8, " ", 8, 0
 enter: db 10, 13, 0
+command_calc: db "calc"
 command_cls: db "cls", 0
 command_echo: db "echo"
 command_help: db "help", 0
@@ -558,4 +678,4 @@ running: db 0x00
 command: db 0
 document: db 0
 
-times 8192-($-$$) db 0
+times 8192-($-$$) db 0 
