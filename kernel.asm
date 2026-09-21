@@ -233,7 +233,165 @@ programer:
     mov dl, 0
     jmp input
 
+calc:
+    mov bl, 0
+    mov bh, 0
+    mov si, command
+    add si, 5
+    call calc_first
+
+    mov al, bh
+    mov ah, 0
+    mov ch, 10
+    div ch
+    mov bh, al
+    cmp bl, 20
+    jg calc_error
+    cmp bh, 20
+    jg calc_error
+
+    cmp cl, "+"
+    je calc_add
+    cmp cl, "-"
+    je calc_sub
+    cmp cl, "*"
+    je calc_mul
+    cmp cl, "/"
+    je calc_div
+
+    jmp one_calc
+
+calc_error:
+    mov si, syntax
+    call print
+    jmp return
+
 action_add:
+    mov ah, 0
+    push ax
+    mov al, bl
+    mov ah, 0
+    mov ch, 10
+    div ch
+    mov bl, al
+    pop ax
+    mov cl, al
+    cmp bl, 20
+    jg calc_error
+    cmp bh, 20
+    jg calc_error
+    jmp calc_second
+
+action_sub:
+    mov ah, 0
+    push ax
+    mov al, bl
+    mov ch, 10
+    div ch
+    mov bl, al
+    pop ax
+    mov cl, al
+    cmp bl, 20
+    jg calc_error
+    cmp bh, 20
+    jg calc_error
+    jmp calc_second
+
+action_mul:
+    mov ah, 0
+    push ax
+    mov al, bl
+    mov ch, 10
+    div ch
+    mov bl, al
+    pop ax
+    mov cl, al
+    cmp bl, 20
+    jg calc_error
+    cmp bh, 20
+    jg calc_error
+    jmp calc_second
+
+action_div:
+    mov ah, 0
+    push ax
+    mov al, bl
+    mov ch, 10
+    div ch
+    mov bl, al
+    pop ax
+    mov cl, al
+    cmp bl, 20
+    jg calc_error
+    cmp bh, 20
+    jg calc_error
+    jmp calc_second
+
+calc_second:
+    mov al, bh
+    mov ah, 10
+    mul ah
+    mov bh, al
+
+    lodsb
+
+    cmp al, " "
+    je calc_error
+
+    cmp al, 0
+    je done
+
+    sub al, "0"
+    add bh, al
+
+    jmp calc_second
+
+one_calc:
+    mov al, bl
+    mov ah, 0
+    mov ch, 10
+    div ch
+    mov bl, al
+
+    mov al, bl
+    mov ah, 0
+    call number
+    mov si, enter
+    call print
+    jmp return
+
+calc_first:
+    mov al, bl
+    mov ah, 10
+    mul ah
+    mov bl, al
+
+    lodsb
+
+    cmp al, " "
+    je calc_error
+
+    cmp al, "+"
+    je action_add
+    cmp al, "-"
+    je action_sub
+    cmp al, "*"
+    je action_mul
+    cmp al, "/"
+    je action_div
+
+    cmp al, "0"
+    jl one_calc
+    cmp al, "9"
+    jg one_calc
+    sub al, "0"
+    add bl, al
+
+    jmp calc_first
+
+calc_add:
+    mov al, bl
+    mov ah, bh
     add al, ah
     mov ah, 0
     call number
@@ -241,7 +399,9 @@ action_add:
     call print
     jmp return
 
-action_sub:
+calc_sub:
+    mov al, bl
+    mov ah, bh
     sub al, ah
     mov ah, 0
     call number
@@ -249,59 +409,20 @@ action_sub:
     call print
     jmp return
 
-action_mul:
+calc_mul:
+    mov al, bl
+    mov ah, bh
     mul ah
-    mov ah, 0
     call number
     mov si, enter
     call print
     jmp return
 
-action_div:
-    mov bl, ah
+calc_div:
+    mov al, bl
     mov ah, 0
-    div bl
+    div bh
     mov ah, 0
-    call number
-    mov si, enter
-    call print
-    jmp return
-
-calc_error:
-    mov al, "0"
-    mov ah, 0x0e
-    int 0x10
-    mov si, enter
-    call print
-    jmp return
-
-calc:
-    mov al, [command + 5]
-    cmp al, "0"
-    jl calc_error
-    cmp al, "9"
-    jg calc_error
-    sub al, "0"
-
-    mov bl, [command + 6]
-
-    mov ah, [command + 7]
-    cmp ah, "0"
-    jl calc_error
-    cmp ah, "9"
-    jg calc_error
-    sub ah, "0"
-
-    cmp bl, "+"
-    je action_add
-    cmp bl, "-"
-    je action_sub
-    cmp bl, "*"
-    je action_mul
-    cmp bl, "/"
-    je action_div
-
-    mov ax, 0
     call number
     mov si, enter
     call print
@@ -659,6 +780,7 @@ press_esc: db "Press <ESC> to save.", 10, 13, 0
 saved: db "The document was saved.", 10, 13, 0
 readed: db "Document:", 10, 13, 0
 error: db "Unknown command.", 10, 13, 0
+syntax: db "Syntax error.", 10, 13, 0
 backspace: db 8, " ", 8, 0
 enter: db 10, 13, 0
 command_calc: db "calc"
