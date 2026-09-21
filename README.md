@@ -3,6 +3,7 @@
 This repository contains files for operating system "NenOS" on assembly language. NenOS is an operating system written in NASM assembly language. It runs in real mode (x16) using BIOS interrupts. It has a simple file system and a built‑in LEN language interpreter.
 
 ## Commands
+- CALC &lt;?&gt; - calculate.
 - CLS - clear the screen.
 - ECHO &lt;?&gt; - print text to screen.
 - HELP - displaying available commands.
