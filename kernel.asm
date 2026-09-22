@@ -233,6 +233,9 @@ programer:
     jmp input
 
 calc:
+    cmp dl, 4
+    je calc_error
+
     mov bl, 0
     mov bh, 0
     mov si, command
@@ -531,6 +534,13 @@ exit:
     jmp return
 
 break:
+    mov dx, 0x3d4
+    mov al, 0x0a
+    out dx, al
+    inc dx
+    in al, dx
+    and al, 0xdf
+    out dx, al
     cmp al, 27
     je exit
     mov ah, 0x00
@@ -714,14 +724,6 @@ return:
     mov al, 0xff
     cmp [running], al
     je step
-
-    mov dx, 0x3d4
-    mov al, 0x0a
-    out dx, al
-    inc dx
-    in al, dx
-    and al, 0xdf
-    out dx, al
 
     mov si, console
     call print
