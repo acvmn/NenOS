@@ -534,6 +534,7 @@ exit:
     jmp return
 
 break:
+    push ax
     mov dx, 0x3d4
     mov al, 0x0a
     out dx, al
@@ -541,6 +542,7 @@ break:
     in al, dx
     and al, 0xdf
     out dx, al
+    pop ax
     cmp al, 27
     je exit
     mov ah, 0x00
