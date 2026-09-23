@@ -29,6 +29,6 @@ You can use any commands from <help> to write a program, which allows you to cre
 echo LOOP
 run
 ```
-To exit the loop, press any key. If the current command is TIME, press &lt;ESC&gt;.
+To exit the loop, press any key.
 
 ![alt Preview](preview.png)
