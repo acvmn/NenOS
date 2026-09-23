@@ -363,8 +363,6 @@ calc_add:
     jmp return
 
 calc_sub:
-    cmp bh, bl
-    jg calc_error
     mov al, bl
     mov ah, bh
     sub al, ah
@@ -759,7 +757,7 @@ command_run: db "run", 0
 command_time: db "time", 0
 command_write: db "write", 0
 running: db 0x00
-command: db 0
-document: db 0
+command: times 256 db 0
+document: times 512 db 0
 
 times 8192-($-$$) db 0 
