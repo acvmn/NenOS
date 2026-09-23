@@ -99,6 +99,14 @@ space:
     pop di
     je argc
 
+    push di
+    mov si, command
+    mov di, command_sleep
+    mov cx, 5
+    repe cmpsb
+    pop di
+    je argc
+
     jmp input
 
 argc:
@@ -183,6 +191,12 @@ check:
     mov cx, 4
     repe cmpsb
     je run
+
+    mov si, command
+    mov di, command_sleep
+    mov cx, 5
+    repe cmpsb
+    je sleep
     
     mov si, command
     mov di, command_time
@@ -439,6 +453,15 @@ reboot:
     jmp 0xffff:0x0000
 
 run:
+    mov dx, 0x3d4
+    mov al, 0x0a
+    out dx, al
+    inc dx
+    in al, dx
+    or al, 0x20
+    out dx, al
+    dec dx
+
     mov ah, 0x03
     mov bh, 0
     int 0x10
@@ -473,6 +496,18 @@ run:
 
     jmp loop
 
+loop:
+   lodsb
+   push si
+   cmp al, 10
+   je check
+   cmp al, 0
+   je stop
+   pop si
+   stosb
+   inc dl
+   jmp loop
+
 step:
     mov ah, 0x03
     mov bh, 0
@@ -497,6 +532,27 @@ step:
     jz loop
     jmp break
 
+break:
+    mov ah, 0x00
+    int 0x16
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+    mov ah, 0x02
+    mov bh, 0
+    inc dh
+    int 0x10
+    mov dx, 0x3d4
+    mov al, 0x0a
+    out dx, al
+    inc dx
+    in al, dx
+    and al, 0xdf
+    out dx, al
+    mov al, 0x00
+    mov [running], al
+    jmp return
+
 stop:
     mov al, 0x00
     mov [running], al
@@ -512,53 +568,55 @@ null:
     call print
     jmp return
 
-loop:
-   lodsb
-   push si
-   cmp al, 10
-   je check
-   cmp al, 0
-   je stop
-   pop si
-   stosb
-   inc dl
-   jmp loop
+delay:
+	dec bp
+	nop
+	jne delay
+	dec si
+	cmp si, 0    
+	jne delay
+	jmp return
 
-exit:
-    mov si, enter
-    call print
-    mov al, 0x00
-    mov [running], al
-    jmp return
+sleep:
+    cmp dl, 5
+    je calc_error
 
-break:
-    push ax
-    mov dx, 0x3d4
-    mov al, 0x0a
-    out dx, al
-    inc dx
-    in al, dx
-    and al, 0xdf
-    out dx, al
-    pop ax
-    cmp al, 27
-    je exit
-    mov ah, 0x00
-    int 0x16
-    mov si, enter
-    call print
-    jmp return
+    mov bx, 0
+    mov si, command
+    add si, 6
+    call sleep_argc
 
-time:
-    mov dx, 0x3d4
-    mov al, 0x0a
-    out dx, al
-    inc dx
-    in al, dx
-    or al, 0x20
-    out dx, al
-    dec dx
-    
+    mov bp, bx
+	mov si, bx
+    jmp delay
+
+sleep_argc:
+    lodsb
+
+    cmp al, 0
+    je done
+
+    dec si
+
+    mov dx, 0
+    mov ax, bx
+    mov cx, 10
+    mul cx
+    mov bx, ax
+
+    lodsb
+
+    cmp al, "0"
+    jl calc_error
+    cmp al, "9"
+    jg calc_error
+    sub al, "0"
+    mov ah, 0
+    add bx, ax
+
+    jmp sleep_argc
+
+time:    
     mov al, 13
     mov ah, 0x0e
     int 0x10
@@ -581,10 +639,9 @@ time:
     mov dl, dh
     call convert
     
-    mov ah, 0x01
-    int 0x16
-    jz time
-    jmp break
+    mov si, enter
+    call print
+    jmp return
 
 convert:
     mov al, dl
@@ -739,7 +796,7 @@ return:
 
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
-help: db "Available Commands:", 10, 13, "  1. CALC <?> - calculate.", 10, 13, "  2. CLS - clear the screen.", 10, 13, "  3. ECHO <?> - print text to screen.", 10, 13, "  4. HELP - displaying available commands.", 10, 13, "  5. READ - read the document.", 10, 13, "  6. REBOOT - reboot the computer.", 10, 13, "  7. RUN - run the program.", 10, 13, "  8. TIME - launches the watch app.", 10, 13, "  9. WRITE - write the document.", 10, 13, 0
+help: db "Available Commands:", 10, 13, "  1. CALC <?> - calculate.", 10, 13, "  2. CLS - clear the screen.", 10, 13, "  3. ECHO <?> - print text to screen.", 10, 13, "  4. HELP - displaying available commands.", 10, 13, "  5. READ - read the document.", 10, 13, "  6. REBOOT - reboot the computer.", 10, 13, "  7. RUN - run the program.", 10, 13, "  8. SLEEP <?> - time delay.", 10, 13, "  9. TIME - print time to screen.", 10, 13, " 10. WRITE - write the document.", 10, 13, 0
 press_esc: db "Press <ESC> to save.", 10, 13, 0
 saved: db "The document was saved.", 10, 13, 0
 readed: db "Document:", 10, 13, 0
@@ -754,6 +811,7 @@ command_help: db "help", 0
 command_read: db "read", 0
 command_reboot: db "reboot", 0
 command_run: db "run", 0
+command_sleep: db "sleep"
 command_time: db "time", 0
 command_write: db "write", 0
 running: db 0x00
