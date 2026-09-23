@@ -576,28 +576,6 @@ null:
     call print
     jmp return
 
-delay:
-	dec bp
-	nop
-	jne delay
-	dec si
-	cmp si, 0    
-	jne delay
-	jmp return
-
-sleep:
-    cmp dl, 5
-    je calc_error
-
-    mov bx, 0
-    mov si, command
-    add si, 6
-    call sleep_argc
-
-    mov bp, bx
-	mov si, bx
-    jmp delay
-
 sleep_argc:
     lodsb
 
@@ -623,6 +601,28 @@ sleep_argc:
     add bx, ax
 
     jmp sleep_argc
+
+sleep:
+    cmp dl, 5
+    je calc_error
+
+    mov bx, 0
+    mov si, command
+    add si, 6
+    call sleep_argc
+
+    mov ax, bx
+    mov cx, 1000
+    mul cx
+
+    mov cx, dx
+    mov dx, ax
+
+    xor al, al
+    mov ah, 0x86
+    int 0x15
+
+    jmp return
 
 time:    
     mov al, 13
