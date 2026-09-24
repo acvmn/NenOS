@@ -19,7 +19,7 @@ You can also write your own programs, save them, and run them. To run the progra
 cls
 echo Current Time:
 time
-sleep 1000
+sleep 100
 run
 ```
 This program starts the watch app.
