@@ -10,7 +10,6 @@ This repository contains files for operating system "NenOS" on assembly language
 - READ - read the document.
 - REBOOT - reboot the computer.
 - RUN - run the program.
-- SLEEP &lt;?&gt; - time delay.
 - TIME - launches the watch app.
 - WRITE - write the document.
 
@@ -19,7 +18,6 @@ You can also write your own programs, save them, and run them. To run the progra
 cls
 echo Current Time:
 time
-sleep 100
 run
 ```
 This program starts the watch app.
@@ -29,6 +27,6 @@ You can use any commands from <help> to write a program, which allows you to cre
 echo LOOP
 run
 ```
-To exit the loop, press any key.
+To exit the loop, press any key. If the current command is TIME, press &lt;ESC&gt;.
 
 ![alt Preview](preview.png)
