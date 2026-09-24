@@ -354,9 +354,10 @@ calc_first:
 
 calc_add:
     mov al, bl
-    mov ah, bh
-    add al, ah
     mov ah, 0
+    mov cl, bh
+    mov ch, 0
+    add ax, cx
     call number
     mov si, enter
     call print
@@ -364,9 +365,10 @@ calc_add:
 
 calc_sub:
     mov al, bl
-    mov ah, bh
-    sub al, ah
     mov ah, 0
+    mov cl, bh
+    mov ch, 0
+    sub ax, cx
     call number
     mov si, enter
     call print
