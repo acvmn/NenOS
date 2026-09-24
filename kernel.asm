@@ -18,21 +18,33 @@ zero:
     ret
 
 number:
-    cmp ax, 0
+    mov bx, ax
+    or bx, dx
     je zero
     mov bx, 0
     push bx
-    jmp push_number
+    jmp check_number
+
+check_number:
+    cmp dx, 0
+    jne push_number
+    cmp ax, 0
+    jne push_number
+    jmp pop_number
 
 push_number:
-    cmp ax, 0
-    je pop_number
-    mov dx, 0
     mov bx, 10
+    mov cx, ax
+    mov ax, dx
+    xor dx, dx
+    div bx
+    mov si, ax
+    mov ax, cx
     div bx
     add dx, "0"
     push dx
-    jmp push_number
+    mov dx, si
+    jmp check_number
 
 pop_number:
     pop ax
@@ -236,8 +248,6 @@ calc:
     cmp dl, 4
     je calc_error
 
-    mov bl, 0
-    mov bh, 0
     mov si, command
     add si, 5
     mov cl, 0
@@ -302,10 +312,11 @@ calc_second:
 
     dec si
 
-    mov al, bh
-    mov ah, 10
-    mul ah
-    mov bh, al
+    mov dx, 0
+    mov ax, [second]
+    mov bx, 10
+    mul bx
+    mov [second], ax
 
     lodsb
 
@@ -316,7 +327,13 @@ calc_second:
     cmp al, "9"
     jg calc_error
     sub al, "0"
-    add bh, al
+    mov ah, 0
+    add [second], ax
+
+    mov ax, [second]
+    mov bx, 1000
+    cmp ax, bx
+    ja calc_error
 
     jmp calc_second
 
@@ -334,10 +351,11 @@ calc_first:
 
     dec si
 
-    mov al, bl
-    mov ah, 10
-    mul ah
-    mov bl, al
+    mov dx, 0
+    mov ax, [first]
+    mov bx, 10
+    mul bx
+    mov [first], ax
 
     lodsb
 
@@ -348,46 +366,59 @@ calc_first:
     cmp al, "9"
     jg calc_error
     sub al, "0"
-    add bl, al
+    mov ah, 0
+    add [first], ax
+
+    mov ax, [first]
+    mov bx, 1000
+    cmp ax, bx
+    ja calc_error
 
     jmp calc_first
 
 calc_add:
-    mov al, bl
-    mov ah, 0
-    mov cl, bh
-    mov ch, 0
-    add ax, cx
+    mov ax, [first]
+    mov bx, [second]
+    xor dx, dx
+    add ax, bx
+    adc dx, 0
     call number
     mov si, enter
     call print
     jmp return
 
 calc_sub:
-    mov al, bl
-    mov ah, 0
-    mov cl, bh
-    mov ch, 0
-    sub ax, cx
+    mov ax, [first]
+    mov bx, [second]
+    cmp bx, ax
+    ja calc_error
+    xor dx, dx
+    sub ax, bx
+    mov dx, 0
+    sbb dx, 0
     call number
     mov si, enter
     call print
     jmp return
 
 calc_mul:
-    mov al, bl
-    mov ah, bh
-    mul ah
+    mov dx, 0
+    mov ax, [first]
+    mov bx, [second]
+    mul bx
     call number
     mov si, enter
     call print
     jmp return
 
 calc_div:
-    mov al, bl
-    mov ah, 0
-    div bh
-    mov ah, 0
+    mov dx, 0
+    mov ax, [first]
+    mov bx, [second]
+    cmp bx, dx
+    je calc_error
+    div bx
+    mov dx, 0
     call number
     mov si, enter
     call print
@@ -731,6 +762,13 @@ return:
     cmp [running], al
     je step
 
+    mov ax, 0
+    mov bx, 0
+    mov cx, 0
+    mov dx, 0
+    mov [first], ax
+    mov [second], ax
+
     mov si, console
     call print
     
@@ -762,6 +800,8 @@ command_reboot: db "reboot", 0
 command_run: db "run", 0
 command_time: db "time", 0
 command_write: db "write", 0
+first: dw 0
+second: dw 0
 running: db 0x00
 command: times 256 db 0
 document: times 512 db 0
