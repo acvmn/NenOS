@@ -316,6 +316,8 @@ calc_second:
     mov ax, [second]
     mov bx, 10
     mul bx
+    cmp dx, 0
+    jne calc_error
     mov [second], ax
 
     lodsb
@@ -329,11 +331,7 @@ calc_second:
     sub al, "0"
     mov ah, 0
     add [second], ax
-
-    mov ax, [second]
-    mov bx, 1000
-    cmp ax, bx
-    ja calc_error
+    jc calc_error
 
     jmp calc_second
 
@@ -355,6 +353,8 @@ calc_first:
     mov ax, [first]
     mov bx, 10
     mul bx
+    cmp dx, 0
+    jne calc_error
     mov [first], ax
 
     lodsb
@@ -368,11 +368,7 @@ calc_first:
     sub al, "0"
     mov ah, 0
     add [first], ax
-
-    mov ax, [first]
-    mov bx, 1000
-    cmp ax, bx
-    ja calc_error
+    jc calc_error
 
     jmp calc_first
 
