@@ -624,7 +624,7 @@ convert:
     mov al, 0
     ret
 
-ready:
+write:
     mov si, press_esc
     call print
 
@@ -636,9 +636,9 @@ ready:
     mov di, document
     mov dx, 0
     mov cx, 0
-    jmp write
+    jmp input_write
 
-write:
+input_write:
     mov ah, 0x00
     int 0x16
     cmp al, 8
@@ -654,7 +654,7 @@ write:
     int 0x10
     inc dx
     inc cx
-    jmp write
+    jmp input_write
 
 save:
     mov al, 0
