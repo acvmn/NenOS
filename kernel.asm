@@ -149,65 +149,42 @@ back:
 check:
     mov al, 0
     stosb
-    
+
     mov si, enter
     call print
     mov bl, 0
 
     mov si, command
-    mov di, command_calc
-    mov cx, 4
-    repe cmpsb
-    je calc
+    mov di, table
 
-    mov si, command
-    mov di, command_cls
-    mov cx, 4
-    repe cmpsb
-    je cls
+    jmp compare
 
-    mov si, command
-    mov di, command_echo
-    mov cx, 4
-    repe cmpsb
-    je echo
-    
-    mov si, command
-    mov di, command_help
-    mov cx, 5
-    repe cmpsb
-    je print_help
-    
-    mov si, command
-    mov di, command_read
-    mov cx, 5
-    repe cmpsb
-    je read
-    
-    mov si, command
-    mov di, command_reboot
-    mov cx, 7
-    repe cmpsb
-    je reboot
+compare:
+    cmp di, end
+    jae false
 
-    mov si, command
-    mov di, command_run
-    mov cx, 4
-    repe cmpsb
-    je run
-    
-    mov si, command
-    mov di, command_time
-    mov cx, 5
-    repe cmpsb
-    je time
-    
-    mov si, command
-    mov di, command_write
-    mov cx, 6
-    repe cmpsb
-    je ready
+    mov bx, [di]
+    mov cx, [di + 4]
 
+    push si
+    push di
+
+    mov di, bx
+    repe cmpsb
+
+    pop di
+    pop si
+
+    je true
+
+    add di, 6
+    jmp compare
+
+true:
+    mov ax, [di + 2]
+    jmp ax
+
+false:
     mov al, 0xff
     cmp [running], al
     je programer
@@ -243,29 +220,6 @@ programer:
     mov di, command
     mov dl, 0
     jmp input
-
-calc:
-    cmp dl, 4
-    je calc_error
-
-    mov si, command
-    add si, 5
-    mov cl, 0
-    call calc_first
-
-    cmp dl, 0
-    je calc_error
-
-    cmp cl, "+"
-    je calc_add
-    cmp cl, "-"
-    je calc_sub
-    cmp cl, "*"
-    je calc_mul
-    cmp cl, "/"
-    je calc_div
-
-    jmp calc_error
 
 calc_error:
     mov si, syntax
@@ -420,6 +374,33 @@ calc_div:
     call print
     jmp return
 
+calc:
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    jne calc_error
+
+    mov si, command
+    add si, 5
+    mov cl, 0
+    call calc_first
+
+    cmp dl, 0
+    je calc_error
+
+    cmp cl, "+"
+    je calc_add
+    cmp cl, "-"
+    je calc_sub
+    cmp cl, "*"
+    je calc_mul
+    cmp cl, "/"
+    je calc_div
+
+    jmp calc_error
+
 cls:
     mov ah, 0x06
     mov al, 0x00
@@ -458,8 +439,8 @@ echo:
     call print
     jmp return
 
-print_help:
-    mov si, help
+help:
+    mov si, available_commands
     call print
     
     jmp return
@@ -779,7 +760,7 @@ return:
 
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
-help: db "Available Commands:", 10, 13, "  1. CALC <?> - calculate.", 10, 13, "  2. CLS - clear the screen.", 10, 13, "  3. ECHO <?> - print text to screen.", 10, 13, "  4. HELP - displaying available commands.", 10, 13, "  5. READ - read the document.", 10, 13, "  6. REBOOT - reboot the computer.", 10, 13, "  7. RUN - run the program.", 10, 13, "  8. TIME - launches the watch app.", 10, 13, "  9. WRITE - write the document.", 10, 13, 0
+available_commands: db "Available Commands:", 10, 13, "  1. CALC <?> - calculate.", 10, 13, "  2. CLS - clear the screen.", 10, 13, "  3. ECHO <?> - print text to screen.", 10, 13, "  4. HELP - displaying available commands.", 10, 13, "  5. READ - read the document.", 10, 13, "  6. REBOOT - reboot the computer.", 10, 13, "  7. RUN - run the program.", 10, 13, "  8. TIME - launches the watch app.", 10, 13, "  9. WRITE - write the document.", 10, 13, 0
 press_esc: db "Press <ESC> to save.", 10, 13, 0
 saved: db "The document was saved.", 10, 13, 0
 readed: db "Document:", 10, 13, 0
@@ -787,18 +768,33 @@ error: db "Unknown command.", 10, 13, 0
 syntax: db "Syntax error.", 10, 13, 0
 backspace: db 8, " ", 8, 0
 enter: db 10, 13, 0
-command_calc: db "calc"
+first: dw 0
+second: dw 0
+running: db 0x00
+
+command_calc: db "calc", 0
 command_cls: db "cls", 0
-command_echo: db "echo"
+command_echo: db "echo", 0
 command_help: db "help", 0
 command_read: db "read", 0
 command_reboot: db "reboot", 0
 command_run: db "run", 0
 command_time: db "time", 0
 command_write: db "write", 0
-first: dw 0
-second: dw 0
-running: db 0x00
+
+table:
+    dw command_calc, calc, 4
+    dw command_cls, cls, 4
+    dw command_echo, echo, 4
+    dw command_help, help, 5
+    dw command_read, read, 5
+    dw command_reboot, reboot, 7
+    dw command_run, run, 4
+    dw command_time, time, 5
+    dw command_write, write, 6
+
+end:
+    
 command: times 256 db 0
 document: times 512 db 0
 
