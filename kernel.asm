@@ -69,6 +69,13 @@ input:
     mov ah, 0x00
     int 0x16
 
+    cmp al, 0
+    jne normal_key
+    cmp ah, 0x48
+    je show_history
+    jmp input
+
+normal_key:
     cmp al, " "
     je space
 
@@ -92,6 +99,38 @@ input:
     mov ah, 0x0e
     int 0x10
     inc dl
+    jmp input
+
+show_history:
+clear_current:
+    cmp dl, 0
+    je load_history
+    mov si, backspace
+    call print
+    dec di
+    dec dl
+    jmp clear_current
+
+load_history:
+    pusha
+    mov cx, 256
+    mov si, history
+    mov di, command
+    rep movsb
+    popa
+
+    mov si, command
+print_history:
+    lodsb
+    cmp al, 0
+    je history_done
+    mov ah, 0x0e
+    int 0x10
+    stosb
+    inc dl
+    jmp print_history
+
+history_done:
     jmp input
 
 space:
@@ -150,6 +189,13 @@ check:
     mov al, 0
     stosb
 
+    pusha
+    mov cx, 256
+    mov si, command
+    mov di, history
+    rep movsb
+    popa
+
     mov si, enter
     call print
     mov bl, 0
@@ -188,10 +234,10 @@ false:
     mov al, 0xff
     cmp [running], al
     je programer
-    
+
     cmp dl, 0
     je return
-    
+
     mov si, error
     call print
     mov si, console
@@ -209,7 +255,7 @@ programer:
 
     cmp dl, 0
     je return
-    
+
     mov si, error
     call print
     mov si, console
@@ -234,7 +280,7 @@ action_add:
     mov cl, al
     jmp calc_second
 
-action_sub: 
+action_sub:
     cmp cl, 0
     je calc_error
     mov dl, 0
@@ -260,6 +306,9 @@ action_div:
 
 calc_second:
     lodsb
+
+    cmp al, " "
+    je calc_second
 
     cmp al, 0
     je done
@@ -291,6 +340,9 @@ calc_second:
 
 calc_first:
     lodsb
+
+    cmp al, " "
+    je calc_first
 
     cmp al, "+"
     je action_add
@@ -408,7 +460,7 @@ cls:
     mov cl, 0
     mov dh, 0x24
     mov dl, 0x80
-    mov bh, 0x07
+    mov bh, [current_color]
     int 0x10
 
     mov ah, 0x02
@@ -416,7 +468,7 @@ cls:
     mov dl, 0
     mov dh, 0
     int 0x10
-    
+
     jmp return
 
 found:
@@ -442,7 +494,7 @@ echo:
 help:
     mov si, available_commands
     call print
-    
+
     jmp return
 
 reboot:
@@ -466,18 +518,7 @@ run:
     mov di, command
     mov dl, 0
 
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
-    mov ah, 0x02
-    mov al, 1
-    mov ch, 0
-    mov cl, 18
-    mov dl, 0x80
-    mov dh, 0
-    mov bx, 0x9e00
-    int 0x13
-    mov si, 0x9e00
+    mov si, document
     mov al, 0xff
     mov [running], al
 
@@ -508,12 +549,14 @@ step:
     jmp break
 
 stop:
+    pop si
+
     mov al, 0x00
     mov [running], al
 
     mov al, [command]
     cmp al, 0
-    je null 
+    je null
 
     jmp check
 
@@ -570,29 +613,29 @@ time:
     or al, 0x20
     out dx, al
     dec dx
-    
+
     mov al, 13
     mov ah, 0x0e
     int 0x10
-    
+
     mov ah, 0x02
     int 0x1a
-    
+
     mov dl, ch
     call convert
     mov al, ":"
     mov ah, 0x0e
     int 0x10
-    
+
     mov dl, cl
     call convert
     mov al, ":"
     mov ah, 0x0e
     int 0x10
-    
+
     mov dl, dh
     call convert
-    
+
     mov ah, 0x01
     int 0x16
     jz time
@@ -604,21 +647,21 @@ convert:
     shr ah, 4
     add ah, "0"
     mov bh, ah
-    
+
     mov al, dl
     shl al, 4
     shr al, 4
     add al, "0"
     mov bl, al
-    
+
     mov al, bh
     mov ah, 0x0e
     int 0x10
-    
+
     mov al, bl
     mov ah, 0x0e
     int 0x10
-    
+
     mov al, 0
     ret
 
@@ -658,26 +701,12 @@ save:
     mov al, 0
     stosb
 
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
-    mov si, document
-    mov cx, 512
-    mov bx, document
-    mov ah, 0x03
-    mov al, 1
-    mov ch, 0
-    mov cl, 18
-    mov dl, 0x80
-    mov dh, 0
-    int 0x13
-    
     mov si, enter
     call print
-    
+
     mov si, saved
     call print
-    
+
     jmp return
 
 back_write:
@@ -694,42 +723,27 @@ back_write:
 line:
     mov si, enter
     call print
-    
+
     mov al, 10
     stosb
     mov al, 13
     stosb
-    
+
     mov dx, 0
     inc cx
-    
+
     jmp input_write
 
 read:
-    mov dx, 0
-    mov [0x9e00], dx
-
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
-    mov ah, 0x02
-    mov al, 1
-    mov ch, 0
-    mov cl, 18
-    mov dl, 0x80
-    mov dh, 0
-    mov bx, 0x9e00
-    int 0x13
-    
     mov si, readed
     call print
-    
-    mov si, 0x9e00
+
+    mov si, document
     call print
-    
+
     mov si, enter
     call print
-    
+
     jmp return
 
 return:
@@ -746,7 +760,7 @@ return:
 
     mov si, console
     call print
-    
+
     mov si, 0
     mov bx, ds
     mov es, bx
@@ -769,6 +783,9 @@ enter: db 10, 13, 0
 first: dw 0
 second: dw 0
 running: db 0x00
+current_color: db 0x07
+msg_ram: db "Base Memory: ", 0
+msg_kb: db " KB", 0
 
 command_calc: db "calc", 0
 command_cls: db "cls", 0
@@ -779,6 +796,9 @@ command_reboot: db "reboot", 0
 command_run: db "run", 0
 command_time: db "time", 0
 command_write: db "write", 0
+command_beep: db "beep", 0
+command_info: db "info", 0
+command_color: db "color", 0
 
 table:
     dw command_calc, calc, 4
@@ -790,10 +810,62 @@ table:
     dw command_run, run, 4
     dw command_time, time, 5
     dw command_write, write, 6
+    dw command_beep, beep, 4
+    dw command_info, info, 4
+    dw command_color, color, 5
 
 end:
-    
+
+info:
+    mov si, enter
+    call print
+
+    mov si, msg_ram
+    call print
+
+    int 0x12
+
+    call number
+
+    mov si, msg_kb
+    call print
+
+    mov si, enter
+    call print
+    jmp return
+
+beep:
+    mov al, 0xb6
+    out 0x43, al
+
+    mov al, 0xA9
+    out 0x42, al
+    mov al, 0x04
+    out 0x42, al
+
+    in al, 0x61
+    or al, 0x03
+    out 0x61, al
+
+    mov ah, 0x86
+    mov cx, 0x0007
+    mov dx, 0xA120
+    int 0x15
+
+    in al, 0x61
+    and al, 0xFC
+    out 0x61, al
+
+    mov si, enter
+    call print
+    jmp return
+
+color:
+    mov byte [current_color], 0x0A
+    jmp cls
+
 command: times 256 db 0
+history: times 256 db 0
 document: times 512 db 0
 
-times 8192-($-$$) db 0 
+times 8192-($-$$) db 0
