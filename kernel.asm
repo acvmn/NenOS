@@ -549,6 +549,8 @@ step:
     jmp break
 
 stop:
+    pop si
+
     mov al, 0x00
     mov [running], al
 
