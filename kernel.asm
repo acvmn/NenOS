@@ -559,8 +559,6 @@ break:
     int 0x16
     mov si, enter
     call print
-    mov al, 0x00
-    mov [running], al
     jmp return
 
 time:
