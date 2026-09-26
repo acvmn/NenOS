@@ -691,7 +691,7 @@ back_write:
     call print
     dec dx
     dec cx
-    jmp write
+    jmp input_write
 
 line:
     mov si, enter
@@ -705,7 +705,7 @@ line:
     mov dx, 0
     inc cx
     
-    jmp write
+    jmp input_write
 
 read:
     mov dx, 0
