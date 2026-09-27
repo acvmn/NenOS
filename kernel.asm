@@ -106,9 +106,13 @@ space_compare:
     mov bx, [di]
     mov cx, [di + 2]
 
+    push si
+    push di
     mov si, command
     mov di, bx
     repe cmpsb
+    pop di
+    pop si
     je space_true
 
     add di, 4
@@ -461,6 +465,23 @@ reboot:
     jmp 0xffff:0x0000
 
 run:
+    mov al, 0
+    mov [file], al
+
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    jne calc_error
+
+    mov si, di
+    mov cl, 0
+    call argc_file
+
+    cmp cl, 0
+    je calc_error
+
     mov ah, 0x03
     mov bh, 0
     int 0x10
@@ -484,7 +505,8 @@ run:
     mov ah, 0x02
     mov al, 1
     mov ch, 0
-    mov cl, 18
+    mov cl, [file]
+    add cl, 18
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -635,6 +657,23 @@ convert:
     ret
 
 write:
+    mov al, 0
+    mov [file], al
+
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    jne calc_error
+
+    mov si, di
+    mov cl, 0
+    call argc_file
+
+    cmp cl, 0
+    je calc_error
+
     mov si, press_esc
     call print
 
@@ -679,7 +718,8 @@ save:
     mov ah, 0x03
     mov al, 1
     mov ch, 0
-    mov cl, 18
+    mov cl, [file]
+    add cl, 18
     mov dl, 0x80
     mov dh, 0
     int 0x13
@@ -718,6 +758,23 @@ line:
     jmp input_write
 
 read:
+    mov al, 0
+    mov [file], al
+
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    jne calc_error
+
+    mov si, di
+    mov cl, 0
+    call argc_file
+
+    cmp cl, 0
+    je calc_error
+
     mov dx, 0
     mov [0x9e00], dx
 
@@ -727,7 +784,8 @@ read:
     mov ah, 0x02
     mov al, 1
     mov ch, 0
-    mov cl, 18
+    mov cl, [file]
+    add cl, 18
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -768,6 +826,36 @@ return:
     mov dl, 0
     jmp input
 
+argc_file:
+    lodsb
+
+    cmp al, 0
+    je done
+
+    dec si
+
+    mov al, [file]
+    mov ah, 0
+    mov bl, 10
+    mul bl
+    cmp ah, 0
+    jne calc_error
+    mov [file], al
+
+    lodsb
+
+    mov cl, al
+
+    cmp al, "0"
+    jl calc_error
+    cmp al, "9"
+    jg calc_error
+    sub al, "0"
+    add [file], al
+    jc calc_error
+
+    jmp argc_file
+
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
 available_commands: db "Available Commands:", 10, 13, "  1. CALC <?> - calculate.", 10, 13, "  2. CLS - clear the screen.", 10, 13, "  3. ECHO <?> - print text to screen.", 10, 13, "  4. HELP - displaying available commands.", 10, 13, "  5. READ <?> - read the document.", 10, 13, "  6. REBOOT - reboot the computer.", 10, 13, "  7. RUN <?> - run the program.", 10, 13, "  8. TIME - launches the watch app.", 10, 13, "  9. WRITE <?> - write the document.", 10, 13, 0
@@ -781,6 +869,7 @@ enter: db 10, 13, 0
 first: dw 0
 second: dw 0
 running: db 0x00
+file: db 0
 
 command_calc: db "calc", 0
 command_cls: db "cls", 0
@@ -797,11 +886,11 @@ cmd_table:
     dw command_cls, cls, 4
     dw command_echo, echo, 4
     dw command_help, help, 5
-    dw command_read, read, 5
+    dw command_read, read, 4
     dw command_reboot, reboot, 7
-    dw command_run, run, 4
+    dw command_run, run, 3
     dw command_time, time, 5
-    dw command_write, write, 6
+    dw command_write, write, 5
 
 cmd_end:
 
