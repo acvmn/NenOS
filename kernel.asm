@@ -722,7 +722,6 @@ write:
     mov dx, 0
     mov [document], dx
     mov di, document
-    mov dx, 0
     mov cx, 0
     jmp input_write
 
@@ -740,7 +739,6 @@ input_write:
     stosb
     mov ah, 0x0e
     int 0x10
-    inc dx
     inc cx
     jmp input_write
 
@@ -771,13 +769,24 @@ save:
     
     jmp return
 
+line:
+    mov si, enter
+    call print
+    
+    mov al, 10
+    stosb
+    mov al, 13
+    stosb
+    
+    inc cx
+    
+    jmp input_write
+
 back_write:
     cmp cx, 0
     je input_write
     push cx
-    push dx
     call check_line
-    pop dx
     pop cx
     cmp bx, 0xffff
     je write_after
@@ -785,7 +794,6 @@ back_write:
     call print
     dec di
     mov byte [di], 0
-    dec dx
     dec cx
     jmp input_write
 
@@ -874,22 +882,7 @@ write_after:
     mov bx, 0x0000
     dec di
     mov byte [di], 0
-    dec dx
     dec cx
-    jmp input_write
-
-line:
-    mov si, enter
-    call print
-    
-    mov al, 10
-    stosb
-    mov al, 13
-    stosb
-    
-    mov dx, 0
-    inc cx
-    
     jmp input_write
 
 read:
