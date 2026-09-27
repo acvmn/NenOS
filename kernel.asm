@@ -451,9 +451,7 @@ echo:
     mov cl, dl
     repne scasb
     je found
-    mov si, enter
-    call print
-    jmp return
+    jmp calc_error
 
 help:
     mov si, available_commands
@@ -482,6 +480,10 @@ run:
     cmp cl, 0
     je calc_error
 
+    mov al, 0
+    cmp [file], al
+    je calc_error
+
     mov ah, 0x03
     mov bh, 0
     int 0x10
@@ -506,7 +508,7 @@ run:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 18
+    add cl, 17
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -674,6 +676,10 @@ write:
     cmp cl, 0
     je calc_error
 
+    mov al, 0
+    cmp [file], al
+    je calc_error
+
     mov si, press_esc
     call print
 
@@ -719,7 +725,7 @@ save:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 18
+    add cl, 17
     mov dl, 0x80
     mov dh, 0
     int 0x13
@@ -775,6 +781,10 @@ read:
     cmp cl, 0
     je calc_error
 
+    mov al, 0
+    cmp [file], al
+    je calc_error
+
     mov dx, 0
     mov [0x9e00], dx
 
@@ -785,7 +795,7 @@ read:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 18
+    add cl, 17
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
