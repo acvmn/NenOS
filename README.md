@@ -7,11 +7,11 @@ This repository contains files for operating system "NenOS" on assembly language
 - CLS - clear the screen.
 - ECHO &lt;?&gt; - print text to screen.
 - HELP - displaying available commands.
-- READ - read the document.
+- READ &lt;?&gt; - read the document.
 - REBOOT - reboot the computer.
-- RUN - run the program.
+- RUN &lt;?&gt; - run the program.
 - TIME - launches the watch app.
-- WRITE - write the document.
+- WRITE &lt;?&gt; - write the document.
 
 You can also write your own programs, save them, and run them. To run the program, enter RUN. After that, the OS will read the file and execute the commands from it sequentially. Example of a program:
 ```
