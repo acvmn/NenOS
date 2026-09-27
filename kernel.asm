@@ -96,21 +96,34 @@ input:
 
 space:
     push di
-    mov si, command
-    mov di, command_calc
-    mov cx, 4
-    repe cmpsb
-    pop di
-    je argc
+    mov di, argc_table
+    jmp space_compare
 
-    push di
-    mov si, command
-    mov di, command_echo
-    mov cx, 4
-    repe cmpsb
-    pop di
-    je argc
+space_compare:
+    cmp di, argc_end
+    jae input
 
+    mov bx, [di]
+    mov cx, [di + 2]
+
+    mov si, command
+    mov di, bx
+    repe cmpsb
+    je space_true
+
+    add di, 4
+    jmp space_compare
+
+space_true:
+    pop di
+    stosb
+    mov ah, 0x0e
+    int 0x10
+    inc dl
+    jmp input
+
+space_false:
+    pop di
     jmp input
 
 argc:
@@ -155,13 +168,13 @@ check:
     mov bl, 0
 
     mov si, command
-    mov di, table
+    mov di, cmd_table
 
-    jmp compare
+    jmp check_compare
 
-compare:
-    cmp di, end
-    jae false
+check_compare:
+    cmp di, cmd_end
+    jae check_false
 
     mov bx, [di]
     mov cx, [di + 4]
@@ -175,16 +188,16 @@ compare:
     pop di
     pop si
 
-    je true
+    je check_true
 
     add di, 6
-    jmp compare
+    jmp check_compare
 
-true:
+check_true:
     mov ax, [di + 2]
     jmp ax
 
-false:
+check_false:
     mov al, 0xff
     cmp [running], al
     je programer
@@ -382,8 +395,7 @@ calc:
     repne scasb
     jne calc_error
 
-    mov si, command
-    add si, 5
+    mov si, di
     mov cl, 0
     call calc_first
 
@@ -758,7 +770,7 @@ return:
 
 welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
 console: db "NenOS> ", 0
-available_commands: db "Available Commands:", 10, 13, "  1. CALC <?> - calculate.", 10, 13, "  2. CLS - clear the screen.", 10, 13, "  3. ECHO <?> - print text to screen.", 10, 13, "  4. HELP - displaying available commands.", 10, 13, "  5. READ - read the document.", 10, 13, "  6. REBOOT - reboot the computer.", 10, 13, "  7. RUN - run the program.", 10, 13, "  8. TIME - launches the watch app.", 10, 13, "  9. WRITE - write the document.", 10, 13, 0
+available_commands: db "Available Commands:", 10, 13, "  1. CALC <?> - calculate.", 10, 13, "  2. CLS - clear the screen.", 10, 13, "  3. ECHO <?> - print text to screen.", 10, 13, "  4. HELP - displaying available commands.", 10, 13, "  5. READ <?> - read the document.", 10, 13, "  6. REBOOT - reboot the computer.", 10, 13, "  7. RUN <?> - run the program.", 10, 13, "  8. TIME - launches the watch app.", 10, 13, "  9. WRITE <?> - write the document.", 10, 13, 0
 press_esc: db "Press <ESC> to save.", 10, 13, 0
 saved: db "The document was saved.", 10, 13, 0
 readed: db "Document:", 10, 13, 0
@@ -780,7 +792,7 @@ command_run: db "run", 0
 command_time: db "time", 0
 command_write: db "write", 0
 
-table:
+cmd_table:
     dw command_calc, calc, 4
     dw command_cls, cls, 4
     dw command_echo, echo, 4
@@ -791,7 +803,16 @@ table:
     dw command_time, time, 5
     dw command_write, write, 6
 
-end:
+cmd_end:
+
+argc_table:
+    dw command_calc, 4
+    dw command_echo, 4
+    dw command_read, 4
+    dw command_run, 3
+    dw command_write, 5
+
+argc_end:
     
 command: times 256 db 0
 document: times 512 db 0
