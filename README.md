@@ -18,15 +18,25 @@ You can also write your own programs, save them, and run them. To run the progra
 cls
 echo Current Time:
 time
-run 0
+run 1
 ```
 This program starts the watch app.
 
 You can use any commands from <help> to write a program, which allows you to create loops, for example:
 ```
 echo LOOP
-run 0
+run 1
 ```
 To exit the loop, press any key. If the current command is TIME, press &lt;ESC&gt;.
+
+You can also jump from one file to another, for example:
+```
+echo Hello from first file!
+run 2
+```
+```
+echo Hello from second file!
+run 1
+```
 
 ![alt Preview](preview.png)
