@@ -78,6 +78,9 @@ input:
     cmp al, 13
     je check
 
+    cmp dl, 255
+    je input
+
     call find
 
     cmp al, "a"
@@ -95,13 +98,15 @@ input:
     jmp input
 
 space:
+    cmp dl, 255
+    je input
     push di
     mov di, argc_table
     jmp space_compare
 
 space_compare:
     cmp di, argc_end
-    jae input
+    jae space_false
 
     mov bx, [di]
     mov cx, [di + 2]
@@ -119,7 +124,10 @@ space_compare:
     jmp space_compare
 
 space_true:
+    mov dh, 0
+    cmp dx, [di + 2]
     pop di
+    jne input
     stosb
     mov ah, 0x0e
     int 0x10
@@ -156,11 +164,36 @@ skip:
 back:
     cmp dl, 0
     je input
+    push cx
+    push dx
+    call check_line
+    pop dx
+    pop cx
+    cmp bx, 0xffff
+    je input_after
     mov si, backspace
     dec di
     mov byte [di], 0
     call print
     dec dl
+    jmp input
+
+input_after:
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+
+    mov ah, 0x02
+    mov bh, 0
+    mov dl, 79
+    dec dh
+    int 0x10
+
+    mov bx, 0x0000
+    dec di
+    mov byte [di], 0
+    dec dx
+    dec cx
     jmp input
 
 check:
@@ -700,8 +733,8 @@ input_write:
     je back_write
     cmp al, 27
     je save
-    cmp cx, 511
-    je write
+    cmp cx, 512
+    je input_write
     cmp al, 13
     je line
     stosb
@@ -739,12 +772,108 @@ save:
     jmp return
 
 back_write:
-    cmp dx, 0
-    je write
+    cmp cx, 0
+    je input_write
+    push cx
+    push dx
+    call check_line
+    pop dx
+    pop cx
+    cmp bx, 0xffff
+    je write_after
     mov si, backspace
+    call print
     dec di
     mov byte [di], 0
-    call print
+    dec dx
+    dec cx
+    jmp input_write
+
+check_line:
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+
+    cmp dl, 0
+    je back_line
+    ret
+
+back_line:
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+
+    mov ah, 0x02
+    mov bh, 0
+    mov dl, 79
+    dec dh
+    int 0x10
+
+    mov ah, 0x08
+    mov bh, 0
+    int 0x10
+
+    cmp al, " "
+    jne done_last
+    
+    jmp loop_line
+
+loop_line:
+    mov ah, 0x08
+    mov bh, 0
+    int 0x10
+
+    cmp al, " "
+    jne done_line
+
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+
+    mov ah, 0x02
+    mov bh, 0
+    dec dl
+    int 0x10
+
+    jmp loop_line
+
+done_line:
+    dec di
+    mov byte [di], 0
+
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+
+    mov ah, 0x02
+    mov bh, 0
+    add dl, 2
+    int 0x10
+
+    ret
+
+done_last:
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov bx, 0xffff
+    ret
+
+write_after:
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+
+    mov ah, 0x02
+    mov bh, 0
+    mov dl, 79
+    dec dh
+    int 0x10
+
+    mov bx, 0x0000
+    dec di
+    mov byte [di], 0
     dec dx
     dec cx
     jmp input_write
