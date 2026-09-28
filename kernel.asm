@@ -1,6 +1,15 @@
 org 0x7e00
 
 start:
+    mov ax, 0x1110
+    mov bh, 16
+    mov bl, 0
+    mov cx, 256
+    mov dx, 0
+    push ds
+    pop es
+    mov bp, font
+    int 0x10
     mov si, welcome
     call print
     mov si, console
@@ -73,9 +82,16 @@ print:
 done:
     ret
 
+input_change:
+    xor byte [lang], 1
+    jmp input
+
 input:
     mov ah, 0x00
     int 0x16
+
+    cmp ah, 0x0f
+    je input_change
 
     cmp al, 8
     je back
@@ -86,87 +102,15 @@ input:
     cmp dl, 255
     je input
 
-    call find
-
-    cmp al, " "
-    je space
-
-    cmp al, "a"
-    jl skip
-    cmp al, "z"
-    jg skip
-
     cmp dl, 255
     je input
 
+    call cp866
+
     stosb
     mov ah, 0x0e
     int 0x10
     inc dl
-    jmp input
-
-space:
-    cmp dl, 255
-    je input
-    push di
-    mov di, argc_table
-    jmp space_compare
-
-space_compare:
-    cmp di, argc_end
-    jae space_false
-
-    mov bx, [di]
-    mov cx, [di + 2]
-
-    push si
-    push di
-    mov si, command
-    mov di, bx
-    repe cmpsb
-    pop di
-    pop si
-    je space_true
-
-    add di, 4
-    jmp space_compare
-
-space_true:
-    mov dh, 0
-    cmp dx, [di + 2]
-    pop di
-    jne input
-    stosb
-    mov ah, 0x0e
-    int 0x10
-    inc dl
-    jmp input
-
-space_false:
-    pop di
-    jmp input
-
-argc:
-    stosb
-    mov ah, 0x0e
-    int 0x10
-    inc dl
-    jmp input
-
-find:
-    push di
-    mov dh, al
-    mov di, command
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    pop di
-    mov al, dh
-    je argc
-    ret
-
-skip:
     jmp input
 
 back:
@@ -183,24 +127,6 @@ back:
     mov byte [di], 0
     pop dx
     dec dl
-    jmp input
-
-input_after:
-    mov ah, 0x03
-    mov bh, 0
-    int 0x10
-
-    mov ah, 0x02
-    mov bh, 0
-    mov dl, 79
-    dec dh
-    int 0x10
-
-    mov bx, 0x0000
-    dec di
-    mov byte [di], 0
-    dec dx
-    dec cx
     jmp input
 
 check:
@@ -277,6 +203,43 @@ programer:
     mov di, command
     mov dl, 0
     jmp input
+
+cp866:
+    mov dh, 0
+    cmp [lang], dh
+    je done
+
+    push bx
+    push si
+    push dx
+
+    mov dl, al
+
+    mov bx, lower
+    cmp al, "A"
+    jb  cp866_lower
+    cmp al, "Z"
+    ja  cp866_lower
+    mov bx, upper
+
+    jmp cp866_lower
+
+cp866_lower:
+    mov si, bx
+    mov bl, ah
+    mov bh, 0
+    add si, bx
+    mov al, [si]
+    test al, al
+    jnz cp866_done
+    mov al, dl
+    jmp cp866_done
+
+cp866_done:
+    pop dx
+    pop si
+    pop bx
+    ret
 
 calc_error:
     mov si, syntax
@@ -510,7 +473,7 @@ clear:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 17
+    add cl, 21
     mov dl, 0x80
     mov dh, 0
     int 0x13
@@ -590,7 +553,7 @@ run:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 17
+    add cl, 21
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -813,6 +776,8 @@ write:
 input_write:
     mov ah, 0x00
     int 0x16
+    cmp ah, 0x0f
+    je write_change
     cmp al, 8
     je back_write
     cmp al, 27
@@ -821,10 +786,15 @@ input_write:
     je input_write
     cmp al, 13
     je line
+    call cp866
     stosb
     mov ah, 0x0e
     int 0x10
     inc cx
+    jmp input_write
+
+write_change:
+    xor byte [lang], 1
     jmp input_write
 
 save:
@@ -841,7 +811,7 @@ save:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 17
+    add cl, 21
     mov dl, 0x80
     mov dh, 0
     int 0x13
@@ -1003,7 +973,7 @@ read:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 17
+    add cl, 21
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -1074,7 +1044,7 @@ argc_file:
 
     jmp argc_file
 
-welcome: db "Welcome to NenOS!", 13, "Type <help> to show available commands.", 13, 0
+welcome: db "Welcome to NenOS!", 13, "Type <help> to show available commands.", 13, "Press <TAB> to change language.", 13, 0
 console: db "NenOS> ", 0
 available_commands: db "Available Commands:", 13, "  1. CALC <?> - calculate.", 13, "  2. CLEAR <?> - clear the document.", 13, "  3. CLS - clear the screen.", 13, "  4. ECHO <?> - print text to screen.", 13, "  5. HELP - displaying available commands.", 13, "  6. READ <?> - read the document.", 13, "  7. REBOOT - reboot the computer.", 13, "  8. RUN <?> - run the program.", 13, "  9. TIME - launches the watch app.", 13, " 10. WRITE <?> - write the document.", 13, 0
 press_esc: db "Press <ESC> to save.", 13, 0
@@ -1087,6 +1057,21 @@ first: dw 0
 second: dw 0
 running: db 0x00
 file: db 0
+lang: db 0
+
+lower:
+    times 0x10 db 0
+    db 0xa9, 0xe6, 0xe3, 0xaa, 0xa5, 0xad, 0xa3, 0xe8, 0xe9, 0xa7, 0xe5, 0xeA, 0, 0, 0xe4, 0xeb
+    db 0xa2, 0xa0, 0xaf, 0xe0, 0xae, 0xab, 0xa4, 0xa6, 0xed, 0xf1, 0, 0, 0xef, 0xe7, 0xe1, 0xac
+    db 0xa8, 0xe2, 0xec, 0xa1, 0xee, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    times 0xc0 db 0
+
+upper:
+    times 0x10 db 0
+    db 0x89, 0x96, 0x93, 0x8a, 0x85, 0x8d, 0x83, 0x98, 0x99, 0x87, 0x95, 0x9a, 0, 0, 0x94, 0x9b
+    db 0x82, 0x80, 0x8f, 0x90, 0x8e, 0x8b, 0x84, 0x86, 0x9d, 0xf0, 0, 0, 0x9f, 0x97, 0x91, 0x8c
+    db 0x88, 0x92, 0x9c, 0x81, 0x9e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    times 0xc0 db 0
 
 command_calc: db "calc", 0
 command_clear: db "clear", 0
@@ -1112,18 +1097,10 @@ cmd_table:
     dw command_write, write, 5
 
 cmd_end:
-
-argc_table:
-    dw command_calc, 4
-    dw command_clear, 5
-    dw command_echo, 4
-    dw command_read, 4
-    dw command_run, 3
-    dw command_write, 5
-
-argc_end:
     
 command: times 256 db 0
 document: times 512 db 0
+
+font: incbin "../cp866-8x16.fnt"
 
 times 8192-($-$$) db 0 
