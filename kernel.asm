@@ -54,12 +54,20 @@ pop_number:
     int 0x10
     jmp pop_number
 
+print_enter:
+    mov al, 10
+    mov ah, 0x0e
+    int 0x10
+    jmp print
+
 print:
     lodsb
     cmp al, 0
     je done
     mov ah, 0x0e
     int 0x10
+    cmp al, 13
+    je print_enter
     jmp print
 
 done:
@@ -468,6 +476,48 @@ cls:
     
     jmp return
 
+clear:
+    mov al, 0
+    mov [document], al
+
+    mov al, 0
+    mov [file], al
+
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    jne calc_error
+
+    mov si, di
+    mov cl, 0
+    call argc_file
+
+    cmp cl, 0
+    je calc_error
+
+    mov al, 0
+    cmp [file], al
+    je calc_error
+
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov si, document
+    mov cx, 512
+    mov bx, document
+    mov ah, 0x03
+    mov al, 1
+    mov ch, 0
+    mov cl, [file]
+    add cl, 17
+    mov dl, 0x80
+    mov dh, 0
+    int 0x13
+    
+    jmp return
+
 found:
     mov si, di
     call print
@@ -716,6 +766,25 @@ write:
     mov si, press_esc
     call print
 
+    mov dx, 0
+    mov [0x9e00], dx
+
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, [file]
+    add cl, 17
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
+    
+    mov si, 0x9e00
+    call print
+
     mov si, 0
     mov bx, ds
     mov es, bx
@@ -723,6 +792,24 @@ write:
     mov [document], dx
     mov di, document
     mov cx, 0
+
+    mov si, 0x9e00
+    mov di, document
+    mov cx, 512
+    rep movsb
+
+    mov di, document
+    mov al, 0
+    mov cx, 512
+    repne scasb
+    sub di, document
+    dec di
+    mov si, di
+
+    mov di, document
+    add di, si
+    mov cx, si
+
     jmp input_write
 
 input_write:
@@ -773,8 +860,6 @@ line:
     mov si, enter
     call print
     
-    mov al, 10
-    stosb
     mov al, 13
     stosb
     
@@ -843,12 +928,12 @@ loop_line:
     dec dl
     int 0x10
 
+    cmp dl, 0
+    je done
+
     jmp loop_line
 
 done_line:
-    dec di
-    mov byte [di], 0
-
     mov ah, 0x03
     mov bh, 0
     int 0x10
@@ -988,22 +1073,23 @@ argc_file:
 
     jmp argc_file
 
-welcome: db "Welcome to NenOS!", 10, 13, "Type <help> to show available commands.", 10, 13, 0
+welcome: db "Welcome to NenOS!", 13, "Type <help> to show available commands.", 13, 0
 console: db "NenOS> ", 0
-available_commands: db "Available Commands:", 10, 13, "  1. CALC <?> - calculate.", 10, 13, "  2. CLS - clear the screen.", 10, 13, "  3. ECHO <?> - print text to screen.", 10, 13, "  4. HELP - displaying available commands.", 10, 13, "  5. READ <?> - read the document.", 10, 13, "  6. REBOOT - reboot the computer.", 10, 13, "  7. RUN <?> - run the program.", 10, 13, "  8. TIME - launches the watch app.", 10, 13, "  9. WRITE <?> - write the document.", 10, 13, 0
-press_esc: db "Press <ESC> to save.", 10, 13, 0
-saved: db "The document was saved.", 10, 13, 0
-readed: db "Document:", 10, 13, 0
-error: db "Unknown command.", 10, 13, 0
-syntax: db "Syntax error.", 10, 13, 0
+available_commands: db "Available Commands:", 13, "  1. CALC <?> - calculate.", 13, "  2. CLEAR <?> - clear the document.", 13, "  3. CLS - clear the screen.", 13, "  4. ECHO <?> - print text to screen.", 13, "  5. HELP - displaying available commands.", 13, "  6. READ <?> - read the document.", 13, "  7. REBOOT - reboot the computer.", 13, "  8. RUN <?> - run the program.", 13, "  9. TIME - launches the watch app.", 13, " 10. WRITE <?> - write the document.", 13, 0
+press_esc: db "Press <ESC> to save.", 13, 0
+saved: db "The document was saved.", 13, 0
+readed: db "Document:", 13, 0
+error: db "Unknown command.", 13, 0
+syntax: db "Syntax error.", 13, 0
 backspace: db 8, " ", 8, 0
-enter: db 10, 13, 0
+enter: db 13, 0
 first: dw 0
 second: dw 0
 running: db 0x00
 file: db 0
 
 command_calc: db "calc", 0
+command_clear: db "clear", 0
 command_cls: db "cls", 0
 command_echo: db "echo", 0
 command_help: db "help", 0
@@ -1015,6 +1101,7 @@ command_write: db "write", 0
 
 cmd_table:
     dw command_calc, calc, 4
+    dw command_clear, clear, 5
     dw command_cls, cls, 4
     dw command_echo, echo, 4
     dw command_help, help, 5
@@ -1028,6 +1115,7 @@ cmd_end:
 
 argc_table:
     dw command_calc, 4
+    dw command_clear, 5
     dw command_echo, 4
     dw command_read, 4
     dw command_run, 3
