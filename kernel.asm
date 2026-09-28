@@ -77,9 +77,6 @@ input:
     mov ah, 0x00
     int 0x16
 
-    cmp al, " "
-    je space
-
     cmp al, 8
     je back
 
@@ -90,6 +87,9 @@ input:
     je input
 
     call find
+
+    cmp al, " "
+    je space
 
     cmp al, "a"
     jl skip
