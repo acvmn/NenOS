@@ -737,7 +737,7 @@ write:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 17
+    add cl, 21
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
