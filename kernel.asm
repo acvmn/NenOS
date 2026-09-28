@@ -619,7 +619,6 @@ step:
     mov [command], dx
     mov di, command
     mov dl, 0
-    inc si
 
     mov ah, 0x01
     int 0x16
@@ -644,7 +643,7 @@ null:
 loop:
    lodsb
    push si
-   cmp al, 10
+   cmp al, 13
    je check
    cmp al, 0
    je stop
