@@ -4,6 +4,7 @@ This repository contains files for operating system "NenOS" on assembly language
 
 ## Commands
 - CALC &lt;?&gt; - calculate.
+- CLEAR &lt;?&gt; - clear the document.
 - CLS - clear the screen.
 - ECHO &lt;?&gt; - print text to screen.
 - HELP - displaying available commands.
