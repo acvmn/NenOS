@@ -172,17 +172,16 @@ skip:
 back:
     cmp dl, 0
     je input
-    push cx
     push dx
     call check_line
-    pop dx
-    pop cx
-    cmp bx, 0xffff
-    je input_after
-    mov si, backspace
+    mov al, " "
+    mov ah, 0x0a
+    mov bh, 0
+    mov cx, 1
+    int 0x10
     dec di
     mov byte [di], 0
-    call print
+    pop dx
     dec dl
     jmp input
 
@@ -866,18 +865,54 @@ line:
     
     jmp input_write
 
+done_line:
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+
+    mov ah, 0x02
+    mov bh, 0
+    inc dl
+    int 0x10
+
+    ret
+
+done_last:
+    mov al, " "
+    mov ah, 0x0a
+    mov bh, 0
+    mov bl, 0
+    mov cx, 1
+    int 0x10
+    ret
+
+done_after:
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+
+    mov ah, 0x02
+    mov bh, 0
+    mov dl, 79
+    dec dh
+    int 0x10
+
+    ret
+
 back_write:
     cmp cx, 0
     je input_write
     push cx
     call check_line
-    pop cx
-    cmp bx, 0xffff
-    je write_after
-    mov si, backspace
-    call print
+    mov al, " "
+    mov ah, 0x0a
+    mov bh, 0
+    mov bl, 0
+    mov cx, 1
+    int 0x10
     dec di
     mov byte [di], 0
+    pop cx
     dec cx
     jmp input_write
 
@@ -888,6 +923,10 @@ check_line:
 
     cmp dl, 0
     je back_line
+
+    mov al, 8
+    mov ah, 0x0e
+    int 0x10
     ret
 
 back_line:
@@ -931,43 +970,6 @@ loop_line:
     je done
 
     jmp loop_line
-
-done_line:
-    mov ah, 0x03
-    mov bh, 0
-    int 0x10
-
-    mov ah, 0x02
-    mov bh, 0
-    add dl, 2
-    int 0x10
-
-    ret
-
-done_last:
-    mov al, " "
-    mov ah, 0x0e
-    int 0x10
-
-    mov bx, 0xffff
-    ret
-
-write_after:
-    mov ah, 0x03
-    mov bh, 0
-    int 0x10
-
-    mov ah, 0x02
-    mov bh, 0
-    mov dl, 79
-    dec dh
-    int 0x10
-
-    mov bx, 0x0000
-    dec di
-    mov byte [di], 0
-    dec cx
-    jmp input_write
 
 read:
     mov al, 0
@@ -1080,7 +1082,6 @@ saved: db "The document was saved.", 13, 0
 readed: db "Document:", 13, 0
 error: db "Unknown command.", 13, 0
 syntax: db "Syntax error.", 13, 0
-backspace: db 8, " ", 8, 0
 enter: db 13, 0
 first: dw 0
 second: dw 0
