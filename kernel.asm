@@ -1,7 +1,6 @@
 org 0x7e00
 
 start:
-    mov [current_disk], dl
     mov ax, 0x1110
     mov bh, 16
     mov bl, 0
@@ -15,8 +14,7 @@ start:
     call print
     mov si, console
     call print
-    mov bx, ds
-    mov es, bx
+    mov bx, 0
     mov di, command
     mov dl, 0
     jmp input
@@ -461,9 +459,6 @@ clear:
     cmp [file], al
     je calc_error
 
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
     mov si, document
     mov cx, 512
     mov bx, document
@@ -472,7 +467,7 @@ clear:
     mov ch, 0
     mov cl, [file]
     add cl, 21
-    mov dl, [current_disk]
+    mov dl, 0x80
     mov dh, 0
     int 0x13
     
@@ -544,15 +539,12 @@ run:
     mov di, command
     mov dl, 0
 
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
     mov ah, 0x02
     mov al, 1
     mov ch, 0
     mov cl, [file]
     add cl, 21
-    mov dl, [current_disk]
+    mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
     int 0x13
@@ -728,15 +720,12 @@ write:
     mov dx, 0
     mov [0x9e00], dx
 
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
     mov ah, 0x02
     mov al, 1
     mov ch, 0
     mov cl, [file]
     add cl, 21
-    mov dl, [current_disk]
+    mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
     int 0x13
@@ -799,9 +788,6 @@ save:
     mov al, 0
     stosb
 
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
     mov si, document
     mov cx, 512
     mov bx, document
@@ -810,7 +796,7 @@ save:
     mov ch, 0
     mov cl, [file]
     add cl, 21
-    mov dl, [current_disk]
+    mov dl, 0x80
     mov dh, 0
     int 0x13
     
@@ -964,15 +950,12 @@ read:
     mov dx, 0
     mov [0x9e00], dx
 
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
     mov ah, 0x02
     mov al, 1
     mov ch, 0
     mov cl, [file]
     add cl, 21
-    mov dl, [current_disk]
+    mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
     int 0x13
@@ -1004,8 +987,7 @@ return:
     call print
     
     mov si, 0
-    mov bx, ds
-    mov es, bx
+    mov bx, 0
     mov dx, 0
     mov [command], dx
     mov di, command
@@ -1054,7 +1036,6 @@ enter: db 13, 0
 first: dw 0
 second: dw 0
 running: db 0x00
-current_disk: db 0x00
 file: db 0
 lang: db 0
 
@@ -1100,6 +1081,6 @@ cmd_end:
 command: times 256 db 0
 document: times 512 db 0
 
-font: incbin "../cp866-8x16.fnt"
+times 8192-($-$$) db 0
 
-times 8192-($-$$) db 0 
+font: incbin "../cp866-8x16.fnt"

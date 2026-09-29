@@ -1,13 +1,11 @@
 org 0x7c00
 
 start:
-    xor ax, ax
-    mov ds, ax
-    cld
     mov ah, 0x02
-    mov al, 20
+    mov al, 24
     mov ch, 0
     mov cl, 2
+    mov dl, 0x80
     mov dh, 0
     xor bx, bx    
     mov es, bx

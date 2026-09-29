@@ -6,9 +6,7 @@ del NenOS.bin
 copy /b boot.bin + kernel.bin NenOS.bin
 del boot.bin
 del kernel.bin
-..\xorriso.exe -as mkisofs \ -volid "NenOS" \ -isohybrid-mbr NenOS.bin \ -b NenOS.bin \ -no-emul-boot \ -boot-load-size 276 -boot-info-table \ -eltorito-alt-boot \ -isohybrid-gpt-basdat \ -o NenOS.iso
+..\xorriso.exe -as mkisofs \ -volid "NenOS" \ -isohybrid-mbr NenOS.bin \ -b NenOS.bin \ -no-emul-boot \ -boot-load-size 280 -boot-info-table \ -eltorito-alt-boot \ -isohybrid-gpt-basdat \ -o NenOS.iso
 del NenOS.bin
 cd C:\Program Files\Oracle\VirtualBox
-del "C:\Users\Даниил\VirtualBox VMs\NenOS\NenOS.vdi"
-"C:\Program Files\Oracle\VirtualBox\vboxmanage.exe" convertfromraw "C:\Images\NenOS\NenOS\NenOS.iso" "C:\Users\Даниил\VirtualBox VMs\NenOS\NenOS.vdi" --format VDI
-"C:\Program Files\Oracle\VirtualBox\vboxmanage.exe" controlvm {e1260df9-966e-444e-a9a8-6a5bfae27932} reset
+"C:\Program Files\Oracle\VirtualBox\vboxmanage.exe" controlvm {2c90ea06-a285-4753-a6b1-ea59cbb54f28} reset
