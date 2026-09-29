@@ -14,7 +14,7 @@ This repository contains files for operating system "NenOS" on assembly language
 - TIME - launches the watch app.
 - WRITE &lt;?&gt; - write the document.
 
-You can also write your own programs, save them, and run them. To run the program, enter RUN. After that, the OS will read the file and execute the commands from it sequentially. Example of a program:
+You can also write your own programs, save them, and run them. To run the program, enter RUN &lt;?&gt;. After that, the OS will read the file and execute the commands from it sequentially. Example of a program:
 ```
 cls
 echo Current Time:
