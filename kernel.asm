@@ -169,28 +169,9 @@ check_true:
     jmp ax
 
 check_false:
-    mov al, 0xff
-    cmp [running], al
-    je programer
-    
-    cmp dl, 0
-    je return
-    
-    mov si, error
-    call print
-    mov si, console
-    call print
-    mov si, 0
-    mov bx, ds
-    mov es, bx
-    mov di, command
-    mov dl, 0
-    jmp input
-
-programer:
     mov al, 0x00
     mov [running], al
-
+    
     cmp dl, 0
     je return
     
@@ -525,6 +506,9 @@ reboot:
     jmp 0xffff:0x0000
 
 run:
+    mov si, error
+    call print
+
     mov al, 0
     mov [file], al
 
