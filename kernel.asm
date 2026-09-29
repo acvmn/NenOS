@@ -1,6 +1,7 @@
 org 0x7e00
 
 start:
+    mov [current_disk], dl
     mov ax, 0x1110
     mov bh, 16
     mov bl, 0
@@ -360,12 +361,12 @@ calc_add:
 calc_sub:
     mov ax, [first]
     mov bx, [second]
-    cmp bx, ax
-    ja calc_error
     xor dx, dx
     sub ax, bx
     mov dx, 0
     sbb dx, 0
+    cmp dx, 0
+    jne negative
     call number
     mov si, enter
     call print
@@ -389,6 +390,22 @@ calc_div:
     je calc_error
     div bx
     mov dx, 0
+    call number
+    mov si, enter
+    call print
+    jmp return
+
+negative:
+    mov al, "-"
+    mov ah, 0x0e
+    int 0x10
+    mov ax, [first]
+    mov bx, [second]
+    xor dx, dx
+    sub bx, ax
+    mov ax, bx
+    mov dx, 0
+    sbb dx, 0
     call number
     mov si, enter
     call print
@@ -474,7 +491,7 @@ clear:
     mov ch, 0
     mov cl, [file]
     add cl, 21
-    mov dl, 0x80
+    mov dl, [current_disk]
     mov dh, 0
     int 0x13
     
@@ -554,7 +571,7 @@ run:
     mov ch, 0
     mov cl, [file]
     add cl, 21
-    mov dl, 0x80
+    mov dl, [current_disk]
     mov dh, 0
     mov bx, 0x9e00
     int 0x13
@@ -738,7 +755,7 @@ write:
     mov ch, 0
     mov cl, [file]
     add cl, 21
-    mov dl, 0x80
+    mov dl, [current_disk]
     mov dh, 0
     mov bx, 0x9e00
     int 0x13
@@ -812,7 +829,7 @@ save:
     mov ch, 0
     mov cl, [file]
     add cl, 21
-    mov dl, 0x80
+    mov dl, [current_disk]
     mov dh, 0
     int 0x13
     
@@ -974,7 +991,7 @@ read:
     mov ch, 0
     mov cl, [file]
     add cl, 21
-    mov dl, 0x80
+    mov dl, [current_disk]
     mov dh, 0
     mov bx, 0x9e00
     int 0x13
@@ -1056,6 +1073,7 @@ enter: db 13, 0
 first: dw 0
 second: dw 0
 running: db 0x00
+current_disk: db 0x00
 file: db 0
 lang: db 0
 
