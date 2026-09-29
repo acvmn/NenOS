@@ -506,9 +506,6 @@ reboot:
     jmp 0xffff:0x0000
 
 run:
-    mov si, error
-    call print
-
     mov al, 0
     mov [file], al
 
