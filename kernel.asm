@@ -484,7 +484,7 @@ copy:
     mov al, 1
     mov ch, 0
     mov cl, bh
-    add cl, 21
+    add cl, 25
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -502,7 +502,7 @@ copy:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 21
+    add cl, 25
     mov dl, 0x80
     mov dh, 0
     int 0x13
@@ -541,7 +541,7 @@ clear:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 21
+    add cl, 25
     mov dl, 0x80
     mov dh, 0
     int 0x13
@@ -630,7 +630,7 @@ run:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 21
+    add cl, 25
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -825,7 +825,7 @@ write:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 21
+    add cl, 25
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -896,7 +896,7 @@ save:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 21
+    add cl, 25
     mov dl, 0x80
     mov dh, 0
     int 0x13
@@ -1055,7 +1055,7 @@ read:
     mov al, 1
     mov ch, 0
     mov cl, [file]
-    add cl, 21
+    add cl, 25
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
