@@ -1,8 +1,7 @@
 # NenOS
-
 This repository contains files for operating system "NenOS" on assembly language. NenOS is an operating system written in NASM assembly language. It runs in real mode (x16) using BIOS interrupts. It has a simple file system and you can create simple scripts on it.
 
-## Commands
+# Commands
 - CALC &lt;?&gt; - calculate.
 - CLEAR &lt;?&gt; - clear the document.
 - CLS - clear the screen.
@@ -16,6 +15,7 @@ This repository contains files for operating system "NenOS" on assembly language
 - TIME - launches the watch app.
 - WRITE &lt;?&gt; - write the document.
 
+# Scripts
 You can also write your own scripts, save them, and run them. WARNING: for the file system to work, make your disk where you want to write files the first one (0x80). In this case, you need to convert the image into a virtual hard disk or make the image accessible for recording. To run the script, enter RUN &lt;?&gt;. After that, the OS will read the file and execute the commands from it sequentially. Example of a program:
 ```
 cls
