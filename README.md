@@ -6,8 +6,10 @@ This repository contains files for operating system "NenOS" on assembly language
 - CALC &lt;?&gt; - calculate.
 - CLEAR &lt;?&gt; - clear the document.
 - CLS - clear the screen.
+- COPY &lt;?&gt; &lt;?&gt; - copy the document.
 - ECHO &lt;?&gt; - print text to screen.
 - HELP - displaying available commands.
+- NOTE &lt;?&gt; - leave a comment in the script.
 - READ &lt;?&gt; - read the document.
 - REBOOT - reboot the computer.
 - RUN &lt;?&gt; - run the program.
