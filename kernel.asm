@@ -170,8 +170,16 @@ check_false:
     cmp dl, 0
     je return
 
-    mov al, 0x00
-    mov [running], al
+    mov ax, 0
+    mov bx, 0
+    mov cx, 0
+    mov dx, 0
+    mov [first], ax
+    mov [second], ax
+
+    mov al, 0xff
+    cmp [running], al
+    je step
     
     mov si, error
     call print
@@ -220,6 +228,32 @@ cp866_done:
     pop si
     pop bx
     ret
+
+calc:
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    jne calc_error
+
+    mov si, di
+    mov cl, 0
+    call calc_first
+
+    cmp dl, 0
+    je calc_error
+
+    cmp cl, "+"
+    je calc_add
+    cmp cl, "-"
+    je calc_sub
+    cmp cl, "*"
+    je calc_mul
+    cmp cl, "/"
+    je calc_div
+
+    jmp calc_error
 
 calc_error:
     mov si, syntax
@@ -389,32 +423,6 @@ negative:
     mov si, enter
     call print
     jmp return
-
-calc:
-    mov di, command
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    jne calc_error
-
-    mov si, di
-    mov cl, 0
-    call calc_first
-
-    cmp dl, 0
-    je calc_error
-
-    cmp cl, "+"
-    je calc_add
-    cmp cl, "-"
-    je calc_sub
-    cmp cl, "*"
-    je calc_mul
-    cmp cl, "/"
-    je calc_div
-
-    jmp calc_error
 
 cls:
     mov ah, 0x06
@@ -1075,16 +1083,16 @@ read:
     jmp return
 
 return:
-    mov al, 0xff
-    cmp [running], al
-    je step
-
     mov ax, 0
     mov bx, 0
     mov cx, 0
     mov dx, 0
     mov [first], ax
     mov [second], ax
+
+    mov al, 0xff
+    cmp [running], al
+    je step
 
     mov si, console
     call print
@@ -1131,21 +1139,21 @@ argc_file:
 
 welcome: db "Welcome to NenOS!", 13, "Type <help> to show available commands.", 13, "Press <TAB> to change language.", 13, 0
 console: db "NenOS> ", 0
-available_commands: db "Available Commands:", 13, "   CALC <?> - calculate.", 13, "   CLEAR <?> - clear the document.", 13, "   CLS - clear the screen.", 13, "   COPY <?> <?> - copy the document.", 13, "   ECHO <?> - print text to screen.", 13, "   HELP - displaying available commands.", 13, "   NOTE <?> - leave a comment in the script.", 13, "   READ <?> - read the document.", 13, "   REBOOT - reboot the computer.", 13, "   RUN <?> - run the script.", 13, "   TIME - launches the watch app.", 13, "   WRITE <?> - write the document.", 13, 0
+syntax: db "Syntax error.", 13, 0
+available_commands: db "Available Commands:", 13, "    1. CALC <?> - calculate.", 13, "    2. CLEAR <?> - clear the document.", 13, "    3. CLS - clear the screen.", 13, "    4. COPY <?> <?> - copy the document.", 13, "    5. ECHO <?> - print text to screen.", 13, "    6. HELP - displaying available commands.", 13, "    7. NOTE <?> - leave a comment in the script.", 13, "    8. READ <?> - read the document.", 13, "    9. REBOOT - reboot the computer.", 13, "   10. RUN <?> - run the script.", 13, "   11. TIME - launches the watch app.", 13, "   12. WRITE <?> - write the document.", 13, 0
+readed: db "Document:", 13, 0
 starting: db "Starting script...", 13, 0
 press_esc: db "Press <ESC> to save.", 13, 0
 saved: db "The document was saved.", 13, 0
-readed: db "Document:", 13, 0
 error: db "Unknown command.", 13, 0
-syntax: db "Syntax error.", 13, 0
 enter: db 13, 0
+lang: db 0
 first: dw 0
 second: dw 0
+file: db 0
 running: db 0x00
 len: dw 0
 runned: dw 0
-file: db 0
-lang: db 0
 
 lower:
     times 0x10 db 0
