@@ -16,23 +16,23 @@ This repository contains files for operating system "NenOS" on assembly language
 - TIME - launches the watch app.
 - WRITE &lt;?&gt; - write the document.
 
-You can also write your own programs, save them, and run them. WARNING: for the file system to work, make your disk where you want to write files the first one (0x80). In this case, you need to convert the image into a virtual hard disk or make the image accessible for recording. To run the program, enter RUN &lt;?&gt;. After that, the OS will read the file and execute the commands from it sequentially. Example of a program:
+You can also write your own scripts, save them, and run them. WARNING: for the file system to work, make your disk where you want to write files the first one (0x80). In this case, you need to convert the image into a virtual hard disk or make the image accessible for recording. To run the script, enter RUN &lt;?&gt;. After that, the OS will read the file and execute the commands from it sequentially. Example of a program:
 ```
 cls
 echo Current Time:
 time
 run 1
 ```
-This program starts the watch app.
+This script starts the watch app.
 
-You can use any commands from <help> to write a program, which allows you to create loops, for example:
+You can use any commands from <help> to write a script, which allows you to create loops, for example:
 ```
 echo LOOP
 run 1
 ```
 To exit the loop, press any key. If the current command is TIME, press &lt;ESC&gt;.
 
-You can also jump from one file to another, for example:
+You can also jump from one script to another, for example:
 ```
 echo Hello from first file!
 run 2
