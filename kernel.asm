@@ -804,6 +804,9 @@ write:
     repne scasb
     jne calc_error
 
+    mov al, 0
+    mov [command], al
+
     mov si, di
     mov cl, 0
     call argc_file
@@ -909,6 +912,31 @@ save:
     
     jmp return
 
+pointer:
+    add dl, 7
+    jmp loop_line
+
+back_line:
+    mov ah, 0x03
+    mov bh, 0
+    int 0x10
+    dec dh
+
+    mov ah, 0x08
+    mov bh, 0
+    int 0x10
+    cmp al, " "
+    jne done_last
+
+    mov dl, 0
+    mov si, di
+    dec si
+
+    mov al, [command]
+    cmp al, 0
+    jne pointer
+    jmp loop_line
+
 line:
     mov si, enter
     call print
@@ -984,47 +1012,21 @@ check_line:
     int 0x10
     ret
 
-back_line:
-    mov ah, 0x03
-    mov bh, 0
-    int 0x10
-
-    mov ah, 0x02
-    mov bh, 0
-    mov dl, 79
-    dec dh
-    int 0x10
-
-    mov ah, 0x08
-    mov bh, 0
-    int 0x10
-
-    cmp al, " "
-    jne done_last
-    
-    jmp loop_line
-
 loop_line:
-    mov ah, 0x08
-    mov bh, 0
-    int 0x10
+    dec si
+    mov al, [si]
+    cmp al, 0
+    je line_done
+    cmp al, 13
+    je line_done
+    inc dl
+    jmp loop_line
 
-    cmp al, " "
-    jne done_line
-
-    mov ah, 0x03
-    mov bh, 0
-    int 0x10
-
+line_done:
     mov ah, 0x02
     mov bh, 0
-    dec dl
     int 0x10
-
-    cmp dl, 0
-    je done
-
-    jmp loop_line
+    ret
 
 read:
     mov al, 0
