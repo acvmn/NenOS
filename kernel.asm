@@ -167,11 +167,11 @@ check_true:
     jmp ax
 
 check_false:
-    mov al, 0x00
-    mov [running], al
-    
     cmp dl, 0
     je return
+
+    mov al, 0x00
+    mov [running], al
     
     mov si, error
     call print
@@ -434,6 +434,81 @@ cls:
     
     jmp return
 
+copy:
+    mov al, 0
+    mov [file], al
+
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    jne calc_error
+
+    mov si, di
+    mov cl, 0
+    call argc_file
+
+    cmp al, 0
+    je calc_error
+
+    cmp cl, 0
+    je calc_error
+
+    mov al, 0
+    cmp [file], al
+    je calc_error
+
+    mov bh, [file]
+
+    mov al, 0
+    mov [file], al
+
+    mov cl, 0
+    call argc_file
+
+    cmp al, 0
+    jne calc_error
+
+    cmp cl, 0
+    je calc_error
+
+    mov al, 0
+    cmp [file], al
+    je calc_error
+
+    mov dx, 0
+    mov [0x9e00], dx
+
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, bh
+    add cl, 21
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
+
+    mov si, 0x9e00
+    mov di, document
+    mov cx, 512
+    rep movsb
+
+    mov si, document
+    mov cx, 512
+    mov bx, document
+    mov ah, 0x03
+    mov al, 1
+    mov ch, 0
+    mov cl, [file]
+    add cl, 21
+    mov dl, 0x80
+    mov dh, 0
+    int 0x13
+
+    jmp return
+
 clear:
     mov al, 0
     mov [document], al
@@ -497,6 +572,15 @@ help:
     
     jmp return
 
+note:
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    je return
+    jmp calc_error
+
 reboot:
     jmp 0xffff:0x0000
 
@@ -521,6 +605,9 @@ run:
     mov al, 0
     cmp [file], al
     je calc_error
+
+    mov si, starting
+    call print
 
     mov ah, 0x03
     mov bh, 0
@@ -551,6 +638,17 @@ run:
     mov si, 0x9e00
     mov al, 0xff
     mov [running], al
+
+    push di
+    mov di, si
+    mov al, 0
+    mov cx, 512
+    repne scasb
+    sub di, si
+    mov [len], di
+    mov ax, 0
+    mov [runned], ax
+    pop di
 
     jmp loop
 
@@ -597,11 +695,14 @@ loop:
    push si
    cmp al, 13
    je check
-   cmp al, 0
-   je stop
    pop si
    stosb
    inc dl
+   mov ax, [runned]
+   inc ax
+   mov [runned], ax
+   cmp ax, [len]
+   je stop
    jmp loop
 
 exit:
@@ -997,6 +1098,8 @@ return:
 argc_file:
     lodsb
 
+    cmp al, " "
+    je done
     cmp al, 0
     je done
 
@@ -1026,7 +1129,8 @@ argc_file:
 
 welcome: db "Welcome to NenOS!", 13, "Type <help> to show available commands.", 13, "Press <TAB> to change language.", 13, 0
 console: db "NenOS> ", 0
-available_commands: db "Available Commands:", 13, "  1. CALC <?> - calculate.", 13, "  2. CLEAR <?> - clear the document.", 13, "  3. CLS - clear the screen.", 13, "  4. ECHO <?> - print text to screen.", 13, "  5. HELP - displaying available commands.", 13, "  6. READ <?> - read the document.", 13, "  7. REBOOT - reboot the computer.", 13, "  8. RUN <?> - run the program.", 13, "  9. TIME - launches the watch app.", 13, " 10. WRITE <?> - write the document.", 13, 0
+available_commands: db "Available Commands:", 13, "   CALC <?> - calculate.", 13, "   CLEAR <?> - clear the document.", 13, "   CLS - clear the screen.", 13, "   COPY <?> <?> - copy the document.", 13, "   ECHO <?> - print text to screen.", 13, "   HELP - displaying available commands.", 13, "   NOTE <?> - leave a comment in the script.", 13, "   READ <?> - read the document.", 13, "   REBOOT - reboot the computer.", 13, "   RUN <?> - run the script.", 13, "   TIME - launches the watch app.", 13, "   WRITE <?> - write the document.", 13, 0
+starting: db "Starting script...", 13, 0
 press_esc: db "Press <ESC> to save.", 13, 0
 saved: db "The document was saved.", 13, 0
 readed: db "Document:", 13, 0
@@ -1036,6 +1140,8 @@ enter: db 13, 0
 first: dw 0
 second: dw 0
 running: db 0x00
+len: dw 0
+runned: dw 0
 file: db 0
 lang: db 0
 
@@ -1056,8 +1162,10 @@ upper:
 command_calc: db "calc", 0
 command_clear: db "clear", 0
 command_cls: db "cls", 0
+command_copy: db "copy", 0
 command_echo: db "echo", 0
 command_help: db "help", 0
+command_note: db "note", 0
 command_read: db "read", 0
 command_reboot: db "reboot", 0
 command_run: db "run", 0
@@ -1068,8 +1176,10 @@ cmd_table:
     dw command_calc, calc, 4
     dw command_clear, clear, 5
     dw command_cls, cls, 4
+    dw command_copy, copy, 4
     dw command_echo, echo, 4
     dw command_help, help, 5
+    dw command_note, note, 4
     dw command_read, read, 4
     dw command_reboot, reboot, 7
     dw command_run, run, 3
