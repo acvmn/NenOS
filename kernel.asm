@@ -170,27 +170,18 @@ check_false:
     cmp dl, 0
     je return
 
+    mov si, error
+    call print
+
     mov ax, 0
     mov bx, 0
     mov cx, 0
     mov dx, 0
     mov [first], ax
     mov [second], ax
+    mov [running], al
 
-    mov al, 0xff
-    cmp [running], al
-    je step
-    
-    mov si, error
-    call print
-    mov si, console
-    call print
-    mov si, 0
-    mov bx, ds
-    mov es, bx
-    mov di, command
-    mov dl, 0
-    jmp input
+    jmp return
 
 cp866:
     mov dh, 0
@@ -925,6 +916,9 @@ pointer:
     jmp loop_line
 
 back_line:
+    cmp dh, 0
+    je read_line
+
     mov ah, 0x03
     mov bh, 0
     int 0x10
@@ -1006,6 +1000,43 @@ back_write:
     pop cx
     dec cx
     jmp input_write
+
+read_width:
+    cmp dl, 80
+    jb read_print
+    sub dl, 80
+    jmp read_width
+
+read_print:
+    mov si, di
+    mov dh, 0
+    sub si, dx
+    dec si
+    call print
+    mov ah, 0x02
+    mov bh, 0
+    int 0x10
+    ret
+
+read_loop:
+    dec si
+    mov al, [si]
+    cmp al, 0
+    je read_width
+    cmp al, 13
+    je read_width
+    inc dl
+    jmp read_loop
+
+read_line:
+    mov ah, 0x02
+    mov bh, 0
+    mov dx, 0
+    int 0x10
+    mov dl, 0
+    mov si, di
+    dec si
+    jmp read_loop
 
 check_line:
     mov ah, 0x03
@@ -1143,6 +1174,7 @@ syntax: db "Syntax error.", 13, 0
 available_commands: db "Available Commands:", 13, "    1. CALC <?> - calculate.", 13, "    2. CLEAR <?> - clear the document.", 13, "    3. CLS - clear the screen.", 13, "    4. COPY <?> <?> - copy the document.", 13, "    5. ECHO <?> - print text to screen.", 13, "    6. HELP - displaying available commands.", 13, "    7. NOTE <?> - leave a comment in the script.", 13, "    8. READ <?> - read the document.", 13, "    9. REBOOT - reboot the computer.", 13, "   10. RUN <?> - run the script.", 13, "   11. TIME - launches the watch app.", 13, "   12. WRITE <?> - write the document.", 13, 0
 readed: db "Document:", 13, 0
 starting: db "Starting script...", 13, 0
+number_line: db ": ", 0
 press_esc: db "Press <ESC> to save.", 13, 0
 saved: db "The document was saved.", 13, 0
 error: db "Unknown command.", 13, 0
