@@ -1,4 +1,4 @@
-cd build
+cd ../build
 del NenOS.iso
 del NenOS.bin
 "C:\Program Files\NASM\nasm.exe" -f bin ..\src\boot.asm -o boot.bin
