@@ -7,9 +7,7 @@ NenOS is an operating system written in NASM assembly language. It runs in real 
 - CLEAR &lt;number&gt; - clear the document.
 - CLS - clear the screen.
 - COPY &lt;from&gt; &lt;to&gt; - copy the document.
-- ECHO &lt;text&gt; - print text to screen.
 - HELP - displaying available commands.
-- NOTE &lt;text&gt; - leave a comment in the script.
 - READ &lt;number&gt; - read the document.
 - REBOOT - reboot the computer.
 - RUN &lt;number&gt; - run the program.
