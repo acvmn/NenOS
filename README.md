@@ -1,45 +1,33 @@
 ## NenOS
-NenOS is an operating system written in NASM assembly language. It runs in real mode (x16) using BIOS interrupts. It has a simple file system and you can create simple scripts on it.
+NenOS is an operating system written in NASM assembly language. It runs in real mode (x16) using BIOS interrupts. It has a simple file system and a built‑in assembler.
 
 ## Commands
-- CALC &lt;?&gt; - calculate.
-- CLEAR &lt;?&gt; - clear the document.
+- BUILD &lt;from&gt; &lt;to&gt; - compile the file.
+- CALC &lt;sample&gt; - calculate.
+- CLEAR &lt;number&gt; - clear the document.
 - CLS - clear the screen.
-- COPY &lt;?&gt; &lt;?&gt; - copy the document.
-- ECHO &lt;?&gt; - print text to screen.
+- COPY &lt;from&gt; &lt;to&gt; - copy the document.
+- ECHO &lt;text&gt; - print text to screen.
 - HELP - displaying available commands.
-- NOTE &lt;?&gt; - leave a comment in the script.
-- READ &lt;?&gt; - read the document.
+- NOTE &lt;text&gt; - leave a comment in the script.
+- READ &lt;number&gt; - read the document.
 - REBOOT - reboot the computer.
-- RUN &lt;?&gt; - run the program.
+- RUN &lt;number&gt; - run the program.
 - TIME - launches the watch app.
-- WRITE &lt;?&gt; - write the document.
+- WRITE &lt;number&gt; - write the document.
 
-## Scripts
-You can also write your own scripts, save them, and run them. WARNING: for the file system to work, make your disk where you want to write files the first one (0x80). In this case, you need to convert the image into a virtual hard disk or make the image accessible for recording. To run the script, enter RUN &lt;?&gt;. After that, the OS will read the file and execute the commands from it sequentially. Example of a program:
+## Assembler
+The built‑in NenOS assembler currently supports only the AX register and interrupts. This allows you to write simple programs using the WRITE command, compile them using the BUILD command, and run them using the RUN command. Code examples:
 ```
-cls
-echo Current Time:
-time
-run 1
-```
-This script starts the watch app.
-
-You can use any commands from <help> to write a script, which allows you to create loops, for example:
-```
-echo LOOP
-run 1
-```
-To exit the loop, press any key. If the current command is TIME, press &lt;ESC&gt;.
-
-You can also jump from one script to another, for example:
-```
-echo Hello from first file!
-run 2
+mov al, 33
+mov ah, 0x0e
+int 0x10
 ```
 ```
-echo Hello from second file!
-run 1
+mov al, 0x00
+int 0x16
+mov ah, 0x0e
+int 0x10
 ```
 
 ## Screenshots
