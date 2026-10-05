@@ -555,29 +555,11 @@ found:
 
     jmp return
 
-echo:
-    mov di, command
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    je found
-    jmp calc_error
-
 help:
     mov si, available_commands
     call print
     
     jmp return
-
-note:
-    mov di, command
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    je return
-    jmp calc_error
 
 reboot:
     jmp 0xffff:0x0000
@@ -1103,10 +1085,8 @@ two_argc_file:
 welcome: db "Welcome to NenOS!", 13, "Type <help> to show available commands.", 13, "Press <TAB> to change language.", 13, 0
 console: db "NenOS> ", 0
 syntax: db "Syntax error.", 13, 0
-available_commands: db "Available Commands:", 13, "    1. BUILD <from> <to> - compile the file.", 13, "    2. CALC <sample> - calculate.", 13, "    3. CLEAR <number> - clear the document.", 13, "    4. CLS - clear the screen.", 13, "    5. COPY <from> <to> - copy the document.", 13, "    6. ECHO <text> - print text to screen.", 13, "    7. HELP - displaying available commands.", 13, "    8. NOTE <text> - leave a comment in the script.", 13, "    9. READ <number> - read the document.", 13, "   10. REBOOT - reboot the computer.", 13, "   11. RUN <number> - run the script.", 13, "   12. TIME - launches the watch app.", 13, "   13. WRITE <number> - write the document.", 13, 0
+available_commands: db "Available Commands:", 13, "   1. BUILD <from> <to> - compile the file.", 13, "   2. CALC <sample> - calculate.", 13, "   3. CLEAR <number> - clear the document.", 13, "   4. CLS - clear the screen.", 13, "   5. COPY <from> <to> - copy the document.", 13, "   6. HELP - displaying available commands.", 13, "   7. READ <number> - read the document.", 13, "   8. REBOOT - reboot the computer.", 13, "   9. RUN <number> - run the script.", 13, "  10. TIME - launches the watch app.", 13, "  11. WRITE <number> - write the document.", 13, 0
 readed: db "Document:", 13, 0
-starting: db "Starting script...", 13, 0
-number_line: db ": ", 0
 press_esc: db "Press <ESC> to save.", 13, 0
 saved: db "The document was saved.", 13, 0
 error: db "Unknown command.", 13, 0
@@ -1135,9 +1115,7 @@ command_calc: db "calc", 0
 command_clear: db "clear", 0
 command_cls: db "cls", 0
 command_copy: db "copy", 0
-command_echo: db "echo", 0
 command_help: db "help", 0
-command_note: db "note", 0
 command_read: db "read", 0
 command_reboot: db "reboot", 0
 command_run: db "run", 0
@@ -1150,9 +1128,7 @@ cmd_table:
     dw command_clear, clear, 5
     dw command_cls, cls, 4
     dw command_copy, copy, 4
-    dw command_echo, echo, 4
     dw command_help, help, 5
-    dw command_note, note, 4
     dw command_read, read, 4
     dw command_reboot, reboot, 7
     dw command_run, run, 3
