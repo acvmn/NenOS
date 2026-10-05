@@ -1,0 +1,130 @@
+run:
+	mov al, 0
+    mov [file], al
+
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    jne calc_error
+
+    mov si, di
+    mov cl, 0
+    call argc_file
+
+    cmp cl, 0
+    je calc_error
+
+    mov al, 0
+    cmp [file], al
+    je calc_error
+
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, [file]
+    add cl, 25
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
+    mov si, 0x9e00
+
+    mov di, int_table
+    mov dx, 0
+    jmp int_compare
+
+int_compare:
+    cmp si, 0
+    je bytes
+
+    cmp di, int_end
+    jae int_false
+
+    mov bx, [di]
+    mov cx, [di + 4]
+
+    push si
+    push di
+
+    mov di, bx
+    repe cmpsb
+
+    pop di
+    pop si
+
+    je int_true
+
+    add di, 6
+    jmp int_compare
+
+int_true:
+    mov ax, [di + 2]
+    jmp ax
+
+int_false:
+    cmp dl, 0
+    je return
+
+    mov si, error
+    call print
+
+    mov ax, 0
+    mov bx, 0
+    mov cx, 0
+    mov dx, 0
+    mov [first], ax
+    mov [second], ax
+
+    jmp return
+
+com_mov:
+    jmp $
+
+com_int:
+    push si
+    mov si, bytes
+    add si, dx
+    mov si, 0xcd
+    inc dx
+    pop si
+    mov al, 0
+    add si, 6
+    jmp com_hex
+
+com_hex:
+    push ax
+    lodsb
+    mov bl, al
+    pop ax
+    cmp bl, 0
+    je add_arg
+    cmp bl, 13
+    je add_arg
+    sub bl, "0"
+    mov ah, 16
+    mul ah
+    add al, bl
+    mov ah, 0
+    jmp com_hex
+
+add_arg:
+    push si
+    mov si, bytes
+    add si, dx
+    mov si, ax
+    inc dx
+    pop si
+    jmp bytes
+
+int_mov: db "mov "
+int_int: db "int "
+
+int_table:
+    dw int_mov, com_mov, 4
+    dw int_int, com_int, 4
+
+int_end:
+
+bytes: db 0xb0, 0x21, 0xb4, 0x0e

@@ -179,7 +179,6 @@ check_false:
     mov dx, 0
     mov [first], ax
     mov [second], ax
-    mov [running], al
 
     jmp return
 
@@ -446,7 +445,7 @@ copy:
 
     mov si, di
     mov cl, 0
-    call argc_file
+    call two_argc_file
 
     cmp al, 0
     je calc_error
@@ -605,25 +604,8 @@ run:
     cmp [file], al
     je calc_error
 
-    mov si, starting
-    call print
-
-    mov ah, 0x03
-    mov bh, 0
-    int 0x10
-
-    mov ah, 0x02
-    mov bh, 0
-    dec dh
-    int 0x10
-
-    mov si, 0
-    mov bx, ds
-    mov es, bx
     mov dx, 0
-    mov [command], dx
-    mov di, command
-    mov dl, 0
+    mov [0x9e00], dx
 
     mov ah, 0x02
     mov al, 1
@@ -634,87 +616,12 @@ run:
     mov dh, 0
     mov bx, 0x9e00
     int 0x13
-    mov si, 0x9e00
-    mov al, 0xff
-    mov [running], al
-
-    push di
-    mov di, si
-    mov al, 0
-    mov cx, 512
-    repne scasb
-    sub di, si
-    mov [len], di
-    mov ax, 0
-    mov [runned], ax
-    pop di
-
-    jmp loop
-
-step:
-    mov ah, 0x03
-    mov bh, 0
-    int 0x10
-
-    mov ah, 0x02
-    mov bh, 0
-    dec dh
-    int 0x10
-
-    pop si
-    mov bx, ds
-    mov es, bx
-    mov dx, 0
-    mov [command], dx
-    mov di, command
-    mov dl, 0
-
-    mov ah, 0x01
-    int 0x16
-    jz loop
-    jmp break
-
-stop:
-    mov al, 0x00
-    mov [running], al
-
-    mov al, [command]
-    cmp al, 0
-    je null 
-
-    jmp check
-
-null:
-    mov si, enter
-    call print
-    jmp return
-
-loop:
-   lodsb
-   push si
-   cmp al, 13
-   je check
-   pop si
-   stosb
-   inc dl
-   mov ax, [runned]
-   inc ax
-   mov [runned], ax
-   cmp ax, [len]
-   je stop
-   jmp loop
-
-exit:
-    mov ah, 0x00
-    int 0x16
-    mov si, enter
-    call print
-    mov al, 0x00
-    mov [running], al
+    
+    jmp 0x9e00
+    
     jmp return
 
 break:
-    push ax
     mov dx, 0x3d4
     mov al, 0x0a
     out dx, al
@@ -722,9 +629,6 @@ break:
     in al, dx
     and al, 0xdf
     out dx, al
-    pop ax
-    cmp al, 27
-    je exit
     mov ah, 0x00
     int 0x16
     mov si, enter
@@ -1121,10 +1025,6 @@ return:
     mov [first], ax
     mov [second], ax
 
-    mov al, 0xff
-    cmp [running], al
-    je step
-
     mov si, console
     call print
     
@@ -1137,6 +1037,36 @@ return:
     jmp input
 
 argc_file:
+    lodsb
+
+    cmp al, 0
+    je done
+
+    dec si
+
+    mov al, [file]
+    mov ah, 0
+    mov bl, 10
+    mul bl
+    cmp ah, 0
+    jne calc_error
+    mov [file], al
+
+    lodsb
+
+    mov cl, al
+
+    cmp al, "0"
+    jl calc_error
+    cmp al, "9"
+    jg calc_error
+    sub al, "0"
+    add [file], al
+    jc calc_error
+
+    jmp argc_file
+
+two_argc_file:
     lodsb
 
     cmp al, " "
@@ -1166,12 +1096,14 @@ argc_file:
     add [file], al
     jc calc_error
 
-    jmp argc_file
+    jmp two_argc_file
+
+%include "../src/compiler.asm"
 
 welcome: db "Welcome to NenOS!", 13, "Type <help> to show available commands.", 13, "Press <TAB> to change language.", 13, 0
 console: db "NenOS> ", 0
 syntax: db "Syntax error.", 13, 0
-available_commands: db "Available Commands:", 13, "    1. CALC <?> - calculate.", 13, "    2. CLEAR <?> - clear the document.", 13, "    3. CLS - clear the screen.", 13, "    4. COPY <?> <?> - copy the document.", 13, "    5. ECHO <?> - print text to screen.", 13, "    6. HELP - displaying available commands.", 13, "    7. NOTE <?> - leave a comment in the script.", 13, "    8. READ <?> - read the document.", 13, "    9. REBOOT - reboot the computer.", 13, "   10. RUN <?> - run the script.", 13, "   11. TIME - launches the watch app.", 13, "   12. WRITE <?> - write the document.", 13, 0
+available_commands: db "Available Commands:", 13, "    1. BUILD <from> <to> - compile the file.", 13, "    2. CALC <sample> - calculate.", 13, "    3. CLEAR <number> - clear the document.", 13, "    4. CLS - clear the screen.", 13, "    5. COPY <from> <to> - copy the document.", 13, "    6. ECHO <text> - print text to screen.", 13, "    7. HELP - displaying available commands.", 13, "    8. NOTE <text> - leave a comment in the script.", 13, "    9. READ <number> - read the document.", 13, "   10. REBOOT - reboot the computer.", 13, "   11. RUN <number> - run the script.", 13, "   12. TIME - launches the watch app.", 13, "   13. WRITE <number> - write the document.", 13, 0
 readed: db "Document:", 13, 0
 starting: db "Starting script...", 13, 0
 number_line: db ": ", 0
@@ -1183,9 +1115,6 @@ lang: db 0
 first: dw 0
 second: dw 0
 file: db 0
-running: db 0x00
-len: dw 0
-runned: dw 0
 
 lower:
     times 0x10 db 0
@@ -1201,6 +1130,7 @@ upper:
     db 0x88, 0x92, 0x9c, 0x81, 0x9e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     times 0xc0 db 0
 
+command_build: db "build", 0
 command_calc: db "calc", 0
 command_clear: db "clear", 0
 command_cls: db "cls", 0
@@ -1215,6 +1145,7 @@ command_time: db "time", 0
 command_write: db "write", 0
 
 cmd_table:
+    dw command_build, build, 5
     dw command_calc, calc, 4
     dw command_clear, clear, 5
     dw command_cls, cls, 4
