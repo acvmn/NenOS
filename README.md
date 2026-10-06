@@ -17,7 +17,7 @@ NenOS is an operating system written in NASM assembly language. It runs in real 
 ## Assembler
 The built‑in NenOS assembler currently supports only the AX, BX, CX, DX registers, all interrupts and the entire syntax of a standard assembler. This allows you to write simple programs using the WRITE command, compile them using the BUILD command, and run them using the RUN command. Code examples:
 ```
-mov al, 33
+mov al, "!"
 mov ah, 0x0e
 int 0x10
 ```
