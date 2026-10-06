@@ -88,19 +88,12 @@ ins_true:
     jmp ax
 
 ins_false:
-    cmp dl, 0
-    je calc_error
-
-    mov si, error
-    call print
-
     mov ax, 0
     mov bx, 0
     mov cx, 0
     mov dx, 0
     mov [first], ax
     mov [second], ax
-
     jmp calc_error
 
 bin:
