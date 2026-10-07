@@ -254,6 +254,7 @@ reg_false:
 
 com_arg:
     mov al, 0
+    mov cl, 0
     add si, 4
     cmp byte [si], 13
     je calc_error
@@ -271,46 +272,7 @@ com_arg:
     je com_dec
     cmp byte [si + 1], "x"
     jne calc_error
-    mov cl, 0
     add si, 2
-    jmp com_hex
-
-check_hex:
-    cmp bl, "0"
-    jb calc_error
-    cmp bl, "9"
-    jbe done
-    cmp bl, "a"
-    jb calc_error
-    cmp bl, "f"
-    ja calc_error
-    ret
-
-com_hex:
-    push ax
-    lodsb
-    mov bl, al
-    pop ax
-    mov cl, al
-    cmp bl, 0
-    je done
-    cmp bl, 13
-    je done
-    cmp bl, " "
-    je done
-    cmp bl, ";"
-    je done
-    call check_hex
-    cmp bl, "9"
-    jbe is_dec
-    sub bl, "a" - 10
-    mov ah, 16
-    mul ah
-    cmp ah, 0
-    jne calc_error
-    add al, bl
-    jc calc_error
-    mov ah, 0
     jmp com_hex
 
 is_dec:
@@ -354,6 +316,44 @@ com_dec:
     jc calc_error
 
     jmp com_dec
+
+check_hex:
+    cmp bl, "0"
+    jb calc_error
+    cmp bl, "9"
+    jbe done
+    cmp bl, "a"
+    jb calc_error
+    cmp bl, "f"
+    ja calc_error
+    ret
+
+com_hex:
+    push ax
+    lodsb
+    mov bl, al
+    pop ax
+    mov cl, al
+    cmp bl, 0
+    je done
+    cmp bl, 13
+    je done
+    cmp bl, " "
+    je done
+    cmp bl, ";"
+    je done
+    call check_hex
+    cmp bl, "9"
+    jbe is_dec
+    sub bl, "a" - 10
+    mov ah, 16
+    mul ah
+    cmp ah, 0
+    jne calc_error
+    add al, bl
+    jc calc_error
+    mov ah, 0
+    jmp com_hex
 
 com_one:
     inc si
