@@ -255,7 +255,8 @@ reg_false:
 com_arg:
     mov al, 0
     mov cl, 0
-    add si, 4
+    add si, 3
+    call skip_space
     cmp byte [si], 13
     je calc_error
     cmp byte [si], 0
@@ -373,15 +374,6 @@ com_two:
     inc si
     ret
 
-ins_mov: db "mov "
-ins_int: db "int "
-
-ins_table:
-    dw ins_mov, com_mov, 4
-    dw ins_int, com_int, 4
-
-ins_end:
-
 reg_al: db "al"
 reg_cl: db "cl"
 reg_dl: db "dl"
@@ -402,5 +394,14 @@ reg_table:
     dw reg_bh, 7, 2
 
 reg_end:
+
+ins_mov: db "mov"
+ins_int: db "int"
+
+ins_table:
+    dw ins_mov, com_mov, 3
+    dw ins_int, com_int, 3
+
+ins_end:
 
 bytes: times 512 db 0
