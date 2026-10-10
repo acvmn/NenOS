@@ -246,7 +246,7 @@ calc:
     jmp calc_error
 
 calc_error:
-    mov si, syntax
+    mov si, argcs
     call print
     jmp return
 
@@ -599,7 +599,7 @@ run:
     mov bx, 0x9e00
     int 0x13
     
-    jmp 0x9e00
+    call 0x9e00
     
     jmp return
 
@@ -1084,7 +1084,7 @@ two_argc_file:
 
 welcome: db "Welcome to NenOS!", 13, "Type <help> to show available commands.", 13, "Press <TAB> to change language.", 13, 0
 console: db "NenOS> ", 0
-syntax: db "Syntax error.", 13, 0
+argcs: db "Arguments error.", 13, 0
 available_commands: db "Available Commands:", 13, "   1. BUILD <from> <to> - compile the file.", 13, "   2. CALC <sample> - calculate.", 13, "   3. CLEAR <number> - clear the document.", 13, "   4. CLS - clear the screen.", 13, "   5. COPY <from> <to> - copy the document.", 13, "   6. HELP - displaying available commands.", 13, "   7. READ <number> - read the document.", 13, "   8. REBOOT - reboot the computer.", 13, "   9. RUN <number> - run the script.", 13, "  10. TIME - launches the watch app.", 13, "  11. WRITE <number> - write the document.", 13, 0
 readed: db "Document:", 13, 0
 press_esc: db "Press <ESC> to save.", 13, 0

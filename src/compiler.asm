@@ -137,7 +137,7 @@ ins_false:
     mov dx, 0
     mov [first], ax
     mov [second], ax
-    jmp calc_error
+    jmp build_error
 
 bin:
     mov si, bytes
@@ -154,16 +154,12 @@ bin:
 
     jmp return
 
-com_line:
-    inc si
-    jmp ins_compare
-
 com_mov:
     mov bx, dx
     mov byte [bytes + bx], 0xb0
     mov di, reg_table
     cmp byte [si + 3], " "
-    jne calc_error
+    jne build_error
     add si, 4
 
     call skip_space
@@ -176,13 +172,17 @@ com_mov:
     call skip_space
     sub si, 2
     cmp byte [si + 2], ","
-    jne calc_error
+    jne build_error
 
     add si, 4
     call skip_space
     sub si, 4
 
+    push dx
     call com_arg
+    pop dx
+    cmp ch, 0
+    jne build_error
     mov bx, dx
     mov byte [bytes + bx], cl
     inc dx
@@ -195,16 +195,19 @@ com_mov:
 com_int:
     mov bx, dx
     mov byte [bytes + bx], 0xcd
-
     inc dx
     cmp byte [si + 3], " "
-    jne calc_error
+    jne build_error
 
     add si, 4
     call skip_space
     sub si, 4
 
+    push dx
     call com_arg
+    pop dx
+    cmp ch, 0
+    jne build_error
     mov bx, dx
     mov byte [bytes + bx], cl
     inc dx
@@ -212,6 +215,51 @@ com_int:
     call skip_space
     cmp byte [si - 1], ";"
     je skip_comment
+    jmp ins_compare
+
+com_jmp:
+    mov bx, dx
+    mov byte [bytes + bx], 0xe9
+    inc dx
+    cmp byte [si + 3], " "
+    jne build_error
+
+    add si, 4
+    call skip_space
+    sub si, 4
+
+    push dx
+    call com_arg
+    pop dx
+    add cx, 3
+    mov ax, 0x9e00
+    sub ax, cx
+    mov bx, dx
+    mov byte [bytes + bx], cl
+    inc dx
+    mov bx, dx
+    mov byte [bytes + bx], ah
+    inc dx
+    mov di, ins_table
+    call skip_space
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
+com_ret:
+    mov bx, dx
+    mov byte [bytes + bx], 0xc3
+    inc dx
+    add si, 3
+
+    mov di, ins_table
+    call skip_space
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
+com_line:
+    inc si
     jmp ins_compare
 
 reg_compare:
@@ -241,7 +289,7 @@ reg_true:
 
 reg_false:
     cmp dl, 0
-    je calc_error
+    je build_error
 
     mov ax, 0
     mov bx, 0
@@ -250,17 +298,22 @@ reg_false:
     mov [first], ax
     mov [second], ax
 
-    jmp calc_error
+    jmp build_error
+
+build_error:
+    mov si, syntax
+    call print
+    jmp return
 
 com_arg:
-    mov al, 0
-    mov cl, 0
+    mov ax, 0
+    mov cx, 0
     add si, 3
     call skip_space
     cmp byte [si], 13
-    je calc_error
+    je build_error
     cmp byte [si], 0
-    je calc_error
+    je build_error
     cmp byte [si], "'"
     je com_one
     cmp byte [si], '"'
@@ -272,16 +325,19 @@ com_arg:
     cmp byte [si + 1], 0
     je com_dec
     cmp byte [si + 1], "x"
-    jne calc_error
+    jne build_error
     add si, 2
     jmp com_hex
 
 is_dec:
+    mov dx, 0
     sub bl, "0"
-    mov ah, 16
-    mul ah
-    add al, bl
-    mov ah, 0
+    mov cx, 16
+    mul cx
+    cmp dx, 0
+    jne build_error
+    add ax, bx
+    jc build_error
     jmp com_hex
 
 com_dec:
@@ -298,43 +354,45 @@ com_dec:
 
     dec si
 
-    mov al, cl
-    mov ah, 0
-    mov bl, 10
-    mul bl
-    cmp ah, 0
-    jne calc_error
-    mov cl, al
+    mov dx, 0
+    mov ax, cx
+    mov bx, 10
+    mul bx
+    cmp dx, 0
+    jne build_error
+    mov cx, ax
 
     lodsb
 
     cmp al, "0"
-    jl calc_error
+    jl build_error
     cmp al, "9"
-    jg calc_error
+    jg build_error
     sub al, "0"
-    add cl, al
-    jc calc_error
+    mov ah, 0
+    add cx, ax
+    jc build_error
 
     jmp com_dec
 
 check_hex:
     cmp bl, "0"
-    jb calc_error
+    jb build_error
     cmp bl, "9"
     jbe done
     cmp bl, "a"
-    jb calc_error
+    jb build_error
     cmp bl, "f"
-    ja calc_error
+    ja build_error
     ret
 
 com_hex:
     push ax
     lodsb
     mov bl, al
+    mov bh, 0
     pop ax
-    mov cl, al
+    mov cx, ax
     cmp bl, 0
     je done
     cmp bl, 13
@@ -347,13 +405,13 @@ com_hex:
     cmp bl, "9"
     jbe is_dec
     sub bl, "a" - 10
-    mov ah, 16
-    mul ah
-    cmp ah, 0
-    jne calc_error
-    add al, bl
-    jc calc_error
-    mov ah, 0
+    mov dx, 0
+    mov cx, 16
+    mul cx
+    cmp dx, 0
+    jne build_error
+    add ax, bx
+    jc build_error
     jmp com_hex
 
 com_one:
@@ -361,7 +419,7 @@ com_one:
     mov cl, [si]
     inc si
     cmp byte [si], "'"
-    jne calc_error
+    jne build_error
     inc si
     ret
     
@@ -370,7 +428,7 @@ com_two:
     mov cl, [si]
     inc si
     cmp byte [si], '"'
-    jne calc_error
+    jne build_error
     inc si
     ret
 
@@ -397,11 +455,17 @@ reg_end:
 
 ins_mov: db "mov"
 ins_int: db "int"
+ins_jmp: db "jmp"
+ins_ret: db "ret"
 
 ins_table:
     dw ins_mov, com_mov, 3
     dw ins_int, com_int, 3
+    dw ins_jmp, com_jmp, 3
+    dw ins_ret, com_ret, 3
 
 ins_end:
+
+syntax: db "Syntax error.", 13, 0
 
 bytes: times 512 db 0
