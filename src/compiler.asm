@@ -262,14 +262,14 @@ com_jmp:
     pop dx
     cmp bh, "x"
     je build_error
-    add cx, 3
-    mov ax, 0x9e00
-    sub ax, cx
+    sub cx, 0x9e00
+    sub cx, dx
+    sub cx, 2
     mov bx, dx
     mov byte [bytes + bx], cl
     inc dx
     mov bx, dx
-    mov byte [bytes + bx], ah
+    mov byte [bytes + bx], ch
     inc dx
     mov di, ins_table
     inc word [com_line]
