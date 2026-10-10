@@ -55,30 +55,14 @@ build:
     call normal
 
     mov di, ins_table
-    mov dx, 0
-    mov word [com_line], 0
+    mov byte [bytes], 0x90
+    mov dx, 1
+    mov word [com_line], 1
     jmp ins_compare
-
-normal:
-    push si
-
-normal_loop:
-    mov al, [si]
-    cmp al, "A"
-    jb normal_next
-    cmp al, "Z"
-    ja normal_next
-    add byte [si], 0x20
-
-normal_next:
-    inc si
-    cmp byte [si], 0
-    jne normal_loop
-    pop si
-    ret
 
 skip_line:
     inc si
+    inc word [com_line]
     jmp ins_compare
 
 skip_space:
@@ -98,6 +82,26 @@ skip_comment:
 skip_done:
     inc si
     jmp ins_compare
+
+normal:
+    push si
+    jmp normal_loop
+
+normal_loop:
+    mov al, [si]
+    cmp al, "A"
+    jb normal_next
+    cmp al, "Z"
+    ja normal_next
+    add byte [si], 0x20
+    jmp normal_next
+
+normal_next:
+    inc si
+    cmp byte [si], 0
+    jne normal_loop
+    pop si
+    ret
 
 ins_compare:
     call skip_space
@@ -132,7 +136,6 @@ ins_compare:
     jmp ins_compare
 
 ins_true:
-    inc word [com_line]
     mov ax, [di + 2]
     jmp ax
 
@@ -209,6 +212,7 @@ com_mov:
     mov byte [bytes + bx], cl
     inc dx
     mov di, ins_table
+    inc word [com_line]
     call skip_space
     cmp byte [si - 1], ";"
     je skip_comment
@@ -236,6 +240,7 @@ com_int:
     mov byte [bytes + bx], cl
     inc dx
     mov di, ins_table
+    inc word [com_line]
     call skip_space
     cmp byte [si - 1], ";"
     je skip_comment
@@ -267,6 +272,7 @@ com_jmp:
     mov byte [bytes + bx], ah
     inc dx
     mov di, ins_table
+    inc word [com_line]
     call skip_space
     cmp byte [si - 1], ";"
     je skip_comment

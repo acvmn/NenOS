@@ -564,6 +564,12 @@ help:
 reboot:
     jmp 0xffff:0x0000
 
+run_error:
+    mov si, not_bin
+    call print
+
+    jmp return
+
 run:
     mov al, 0
     mov [file], al
@@ -598,6 +604,9 @@ run:
     mov dh, 0
     mov bx, 0x9e00
     int 0x13
+
+    cmp byte [0x9e00], 0x90
+    jne run_error
     
     call 0x9e00
     
@@ -1087,6 +1096,7 @@ console: db "NenOS> ", 0
 argcs: db "Arguments error.", 13, 0
 available_commands: db "Available Commands:", 13, "   1. BUILD <from> <to> - compile the file.", 13, "   2. CALC <sample> - calculate.", 13, "   3. CLEAR <number> - clear the document.", 13, "   4. CLS - clear the screen.", 13, "   5. COPY <from> <to> - copy the document.", 13, "   6. HELP - displaying available commands.", 13, "   7. READ <number> - read the document.", 13, "   8. REBOOT - reboot the computer.", 13, "   9. RUN <number> - run the script.", 13, "  10. TIME - launches the watch app.", 13, "  11. WRITE <number> - write the document.", 13, 0
 readed: db "Document:", 13, 0
+not_bin: db "Not binary file.", 13, 0
 press_esc: db "Press <ESC> to save.", 13, 0
 saved: db "The document was saved.", 13, 0
 error: db "Unknown command.", 13, 0
