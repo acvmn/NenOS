@@ -269,7 +269,7 @@ scd_16:
     ret
 
 num_bit:
-    cmp bl, 2
+    cmp byte [com_bit], 2
     je num_16
     cmp ch, 0
     jne build_error
@@ -292,6 +292,7 @@ com_mov:
     call skip_space
 
     call reg_compare
+    mov [com_bit], ch
     call fst_bit
     mov bx, dx
     add byte [bytes + bx], cl
@@ -311,16 +312,14 @@ com_mov:
     je mov_reg
 
     push dx
-    mov bl, ch
     call com_arg
     pop dx
     cmp bh, "x"
     je build_error
-    push bx
     mov bx, dx
     mov byte [bytes + bx], cl
     inc dx
-    pop bx
+    mov al, ch
     call num_bit
     mov di, ins_table
     inc word [com_line]
@@ -560,6 +559,7 @@ com_two:
     ret
 
 com_line: dw 0
+com_bit: db 0
 
 reg_al: db "al"
 reg_cl: db "cl"
