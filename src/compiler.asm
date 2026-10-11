@@ -89,12 +89,31 @@ normal:
     push si
     jmp normal_loop
 
+normal_check:
+    cmp ah, 0x00
+    je normal_start
+    jmp normal_end
+
+normal_start:
+    mov ah, 0xff
+    jmp normal_next
+
+normal_end:
+    mov ah, 0x00
+    jmp normal_next
+
 normal_loop:
     mov al, [si]
+    cmp al, "'"
+    je normal_check
+    cmp al, '"'
+    je normal_check
     cmp al, "A"
     jb normal_next
     cmp al, "Z"
     ja normal_next
+    cmp ah, 0xff
+    je normal_next
     add byte [si], 0x20
     jmp normal_next
 
