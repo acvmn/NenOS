@@ -177,6 +177,110 @@ build_error:
     call print
     jmp return
 
+sec_reg:
+    push cx
+    add si, 4
+    mov di, reg_table
+    jmp sec_compare
+
+sec_compare:
+    cmp di, reg_end
+    jae sec_false
+
+    mov bx, [di]
+    mov cx, [di + 4]
+
+    push si
+    push di
+
+    mov di, bx
+    repe cmpsb
+
+    pop di
+    pop si
+
+    je sec_true
+
+    add di, 8
+    jmp sec_compare
+
+sec_true:
+    pop cx
+    mov ax, [di + 6]
+    cmp al, ch
+    jne build_error
+
+    add si, 2
+    mov bx, [di + 2]
+    mov ax, [di + 6]
+    mov bh, al
+    mov al, 1
+    mov ah, 0
+    ret
+
+sec_false:
+    sub si, 4
+    pop cx
+    mov al, 0
+    ret
+
+mov_reg:
+    push bx
+    dec dx
+    mov bx, dx
+    mov byte [bytes + bx], 0x88
+    inc dx
+    pop bx
+
+    mov al, 0xc0
+    shl bl, 3
+    or al, bl
+    or al, cl
+    mov bx, dx
+    mov byte [bytes + bx], al
+    inc dx
+
+    mov di, ins_table
+    call skip_space
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
+fst_bit:
+    cmp ch, 2
+    je fst_16
+    ret
+
+fst_16:
+    mov bx, dx
+    mov byte [bytes + bx], 0xb8
+    ret
+
+scd_bit:
+    cmp ch, 2
+    je scd_16
+    ret
+
+scd_16:
+    dec dx
+    mov bx, dx
+    mov byte [bytes + bx], 0x89
+    inc dx
+    ret
+
+num_bit:
+    cmp bl, 2
+    je num_16
+    cmp ch, 0
+    jne build_error
+    ret
+
+num_16:
+    mov bx, dx
+    mov byte [bytes + bx], al
+    inc dx
+    ret
+
 com_mov:
     mov bx, dx
     mov byte [bytes + bx], 0xb0
@@ -188,6 +292,7 @@ com_mov:
     call skip_space
 
     call reg_compare
+    call fst_bit
     mov bx, dx
     add byte [bytes + bx], cl
     inc dx
@@ -201,16 +306,22 @@ com_mov:
     call skip_space
     sub si, 4
 
+    call sec_reg
+    cmp al, 1
+    je mov_reg
+
     push dx
+    mov bl, ch
     call com_arg
     pop dx
     cmp bh, "x"
     je build_error
-    cmp ch, 0
-    jne build_error
+    push bx
     mov bx, dx
     mov byte [bytes + bx], cl
     inc dx
+    pop bx
+    call num_bit
     mov di, ins_table
     inc word [com_line]
     call skip_space
@@ -296,11 +407,13 @@ reg_compare:
 
     je reg_true
 
-    add di, 6
+    add di, 8
     jmp reg_compare
 
 reg_true:
     mov cx, [di + 2]
+    mov ax, [di + 6]
+    mov ch, al
     ret
 
 reg_false:
@@ -456,16 +569,32 @@ reg_ah: db "ah"
 reg_ch: db "ch"
 reg_dh: db "dh"
 reg_bh: db "bh"
+reg_ax: db "ax"
+reg_cx: db "cx"
+reg_dx: db "dx"
+reg_bx: db "bx"
+reg_sp: db "sp"
+reg_bp: db "bp"
+reg_si: db "si"
+reg_di: db "di"
 
 reg_table:
-    dw reg_al, 0, 2
-    dw reg_cl, 1, 2
-    dw reg_dl, 2, 2
-    dw reg_bl, 3, 2
-    dw reg_ah, 4, 2
-    dw reg_ch, 5, 2
-    dw reg_dh, 6, 2
-    dw reg_bh, 7, 2
+    dw reg_al, 0, 2, 1
+    dw reg_cl, 1, 2, 1
+    dw reg_dl, 2, 2, 1
+    dw reg_bl, 3, 2, 1
+    dw reg_ah, 4, 2, 1
+    dw reg_ch, 5, 2, 1
+    dw reg_dh, 6, 2, 1
+    dw reg_bh, 7, 2, 1
+    dw reg_ax, 0, 2, 2
+    dw reg_cx, 1, 2, 2
+    dw reg_dx, 2, 2, 2
+    dw reg_bx, 3, 2, 2
+    dw reg_sp, 4, 2, 2
+    dw reg_bp, 5, 2, 2
+    dw reg_si, 6, 2, 2
+    dw reg_di, 7, 2, 2
 
 reg_end:
 
