@@ -1,21 +1,6 @@
 org 0x7c00
 
 start:
-    mov ah, 0x06
-    mov al, 0x00
-    mov ch, 0
-    mov cl, 0
-    mov dh, 0x24
-    mov dl, 0x80
-    mov bh, 0x07
-    int 0x10
-
-    mov ah, 0x02
-    mov bh, 0
-    mov dl, 0
-    mov dh, 0
-    int 0x10
-
     mov ah, 0x02
     mov al, 24
     mov ch, 0
