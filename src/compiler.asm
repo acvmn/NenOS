@@ -441,7 +441,7 @@ com_arg:
     je com_one
     cmp byte [si], '"'
     je com_two
-    cmp byte [si], "0"
+    cmp byte [si + 1], "x"
     jne com_dec
     cmp byte [si + 1], 13
     je com_dec
