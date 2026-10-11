@@ -94,10 +94,6 @@ print:
 done:
     ret
 
-input_change:
-    xor byte [lang], 1
-    jmp input
-
 input:
     mov ah, 0x00
     int 0x16
@@ -119,11 +115,24 @@ input:
 
     call cp866
 
-    stosb
     mov ah, 0x0e
     int 0x10
     inc dl
+    call to_lower
+    stosb
     jmp input
+
+input_change:
+    xor byte [lang], 1
+    jmp input
+
+to_lower:
+    cmp al, "A"
+    jb done
+    cmp al, "Z"
+    ja done
+    or al, 0x20
+    ret
 
 back:
     cmp dl, 0
@@ -151,6 +160,8 @@ check:
 
     mov si, command
     mov di, cmd_table
+
+    call skip_space
 
     jmp check_compare
 
@@ -232,36 +243,24 @@ cp866_done:
     pop bx
     ret
 
-calc:
-    mov di, command
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    jne calc_error
-
-    mov si, di
-    mov cl, 0
-    call calc_first
-
-    cmp dl, 0
-    je calc_error
-
-    cmp cl, "+"
-    je calc_add
-    cmp cl, "-"
-    je calc_sub
-    cmp cl, "*"
-    je calc_mul
-    cmp cl, "/"
-    je calc_div
-
-    jmp calc_error
-
 calc_error:
     mov si, argcs
     call print
     jmp return
+
+first_space:
+    lodsb
+    cmp al, "+"
+    je action_add
+    cmp al, "-"
+    je action_sub
+    cmp al, "*"
+    je action_mul
+    cmp al, "/"
+    je action_div
+    cmp al, " "
+    je first_space
+    jmp calc_error
 
 action_add:
     cmp cl, 0
@@ -269,6 +268,7 @@ action_add:
     mov dl, 0
     mov ah, 0
     mov cl, al
+    call skip_space
     jmp calc_second
 
 action_sub: 
@@ -277,6 +277,7 @@ action_sub:
     mov dl, 0
     mov ah, 0
     mov cl, al
+    call skip_space
     jmp calc_second
 
 action_mul:
@@ -285,6 +286,7 @@ action_mul:
     mov dl, 0
     mov ah, 0
     mov cl, al
+    call skip_space
     jmp calc_second
 
 action_div:
@@ -293,6 +295,7 @@ action_div:
     mov dl, 0
     mov ah, 0
     mov cl, al
+    call skip_space
     jmp calc_second
 
 calc_second:
@@ -337,6 +340,8 @@ calc_first:
     je action_mul
     cmp al, "/"
     je action_div
+    cmp al, " "
+    je first_space
 
     dec si
 
@@ -427,6 +432,33 @@ negative:
     call print
     jmp return
 
+calc:
+    mov di, command
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    jne calc_error
+
+    mov si, di
+    call skip_space
+    mov cl, 0
+    call calc_first
+
+    cmp dl, 0
+    je calc_error
+
+    cmp cl, "+"
+    je calc_add
+    cmp cl, "-"
+    je calc_sub
+    cmp cl, "*"
+    je calc_mul
+    cmp cl, "/"
+    je calc_div
+
+    jmp calc_error
+
 cls:
     mov ah, 0x06
     mov al, 0x00
@@ -457,6 +489,7 @@ copy:
     jne calc_error
 
     mov si, di
+    call skip_space
     mov cl, 0
     call two_argc_file
 
@@ -475,6 +508,7 @@ copy:
     mov al, 0
     mov [file], al
 
+    call skip_space
     mov cl, 0
     call argc_file
 
@@ -535,6 +569,7 @@ clear:
     jne calc_error
 
     mov si, di
+    call skip_space
     mov cl, 0
     call argc_file
 
@@ -595,6 +630,7 @@ run:
     jne calc_error
 
     mov si, di
+    call skip_space
     mov cl, 0
     call argc_file
 
@@ -621,7 +657,18 @@ run:
     cmp byte [0x9e00], 0x90
     jne run_error
     
+    xor ax, ax
+    xor bx, bx
+    xor cx, cx
+    xor dx, dx
+    xor si, si
+    xor di, di
+    xor bp, bp
+    xor sp, sp
     call 0x9e00
+
+    mov si, enter
+    call print
     
     jmp return
 
@@ -715,6 +762,7 @@ write:
     mov [command], al
 
     mov si, di
+    call skip_space
     mov cl, 0
     call argc_file
 
@@ -987,6 +1035,7 @@ read:
     jne calc_error
 
     mov si, di
+    call skip_space
     mov cl, 0
     call argc_file
 

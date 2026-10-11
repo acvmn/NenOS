@@ -10,6 +10,7 @@ build:
     jne calc_error
 
     mov si, di
+    call skip_space
     mov cl, 0
     call two_argc_file
 
@@ -28,6 +29,7 @@ build:
     mov al, 0
     mov [file], al
 
+    call skip_space
     mov cl, 0
     call argc_file
 
