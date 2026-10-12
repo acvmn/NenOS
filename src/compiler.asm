@@ -262,7 +262,9 @@ mov_reg:
     inc dx
 
     mov di, ins_table
+    inc word [com_line]
     call skip_space
+    inc si
     cmp byte [si - 1], ";"
     je skip_comment
     jmp ins_compare
@@ -345,6 +347,7 @@ com_mov:
     mov di, ins_table
     inc word [com_line]
     call skip_space
+    inc si
     cmp byte [si - 1], ";"
     je skip_comment
     jmp ins_compare
