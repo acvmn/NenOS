@@ -2,7 +2,7 @@ build:
 	mov al, 0
     mov [file], al
 
-    mov di, command
+    mov di, si
     mov al, " "
     mov ch, 0
     mov cl, dl
@@ -33,7 +33,8 @@ build:
     mov cl, 0
     call argc_file
 
-    cmp al, 0
+    call skip_space
+    cmp byte [si], 0
     jne calc_error
 
     cmp cl, 0

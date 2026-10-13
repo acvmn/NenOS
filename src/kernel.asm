@@ -433,7 +433,7 @@ negative:
     jmp return
 
 calc:
-    mov di, command
+    mov di, si
     mov al, " "
     mov ch, 0
     mov cl, dl
@@ -444,6 +444,10 @@ calc:
     call skip_space
     mov cl, 0
     call calc_first
+
+    call skip_space
+    cmp byte [si], 0
+    jne calc_error
 
     cmp dl, 0
     je calc_error
@@ -459,7 +463,21 @@ calc:
 
     jmp calc_error
 
+to_space:
+    lodsb
+    cmp al, " "
+    je done
+    cmp al, 0
+    je done
+    jmp to_space
+
 cls:
+    call to_space
+    dec si
+    call skip_space
+    cmp byte [si], 0
+    jne calc_error
+
     mov ah, 0x06
     mov al, 0x00
     mov ch, 0
@@ -481,7 +499,7 @@ copy:
     mov al, 0
     mov [file], al
 
-    mov di, command
+    mov di, si
     mov al, " "
     mov ch, 0
     mov cl, dl
@@ -512,7 +530,8 @@ copy:
     mov cl, 0
     call argc_file
 
-    cmp al, 0
+    call skip_space
+    cmp byte [si], 0
     jne calc_error
 
     cmp cl, 0
@@ -561,7 +580,7 @@ clear:
     mov al, 0
     mov [file], al
 
-    mov di, command
+    mov di, si
     mov al, " "
     mov ch, 0
     mov cl, dl
@@ -572,6 +591,10 @@ clear:
     call skip_space
     mov cl, 0
     call argc_file
+
+    call skip_space
+    cmp byte [si], 0
+    jne calc_error
 
     cmp cl, 0
     je calc_error
@@ -604,12 +627,24 @@ found:
     jmp return
 
 help:
+    call to_space
+    dec si
+    call skip_space
+    cmp byte [si], 0
+    jne calc_error
+
     mov si, available_commands
     call print
     
     jmp return
 
 reboot:
+    call to_space
+    dec si
+    call skip_space
+    cmp byte [si], 0
+    jne calc_error
+
     jmp 0xffff:0x0000
 
 run_error:
@@ -622,7 +657,7 @@ run:
     mov al, 0
     mov [file], al
 
-    mov di, command
+    mov di, si
     mov al, " "
     mov ch, 0
     mov cl, dl
@@ -633,6 +668,10 @@ run:
     call skip_space
     mov cl, 0
     call argc_file
+
+    call skip_space
+    cmp byte [si], 0
+    jne calc_error
 
     cmp cl, 0
     je calc_error
@@ -687,6 +726,14 @@ break:
     jmp return
 
 time:
+    call to_space
+    dec si
+    call skip_space
+    cmp byte [si], 0
+    jne calc_error
+    jmp bcd
+
+bcd:
     mov dx, 0x3d4
     mov al, 0x0a
     out dx, al
@@ -720,7 +767,7 @@ time:
     
     mov ah, 0x01
     int 0x16
-    jz time
+    jz bcd
     jmp break
 
 convert:
@@ -751,7 +798,7 @@ write:
     mov al, 0
     mov [file], al
 
-    mov di, command
+    mov di, si
     mov al, " "
     mov ch, 0
     mov cl, dl
@@ -765,6 +812,10 @@ write:
     call skip_space
     mov cl, 0
     call argc_file
+
+    call skip_space
+    cmp byte [si], 0
+    jne calc_error
 
     cmp cl, 0
     je calc_error
@@ -1027,7 +1078,7 @@ read:
     mov al, 0
     mov [file], al
 
-    mov di, command
+    mov di, si
     mov al, " "
     mov ch, 0
     mov cl, dl
@@ -1038,6 +1089,10 @@ read:
     call skip_space
     mov cl, 0
     call argc_file
+
+    call skip_space
+    cmp byte [si], 0
+    jne calc_error
 
     cmp cl, 0
     je calc_error
@@ -1093,6 +1148,8 @@ argc_file:
     lodsb
 
     cmp al, 0
+    je done
+    cmp al, " "
     je done
 
     dec si
@@ -1198,13 +1255,13 @@ cmd_table:
     dw command_build, build, 5
     dw command_calc, calc, 4
     dw command_clear, clear, 5
-    dw command_cls, cls, 4
+    dw command_cls, cls, 3
     dw command_copy, copy, 4
-    dw command_help, help, 5
+    dw command_help, help, 4
     dw command_read, read, 4
-    dw command_reboot, reboot, 7
+    dw command_reboot, reboot, 6
     dw command_run, run, 3
-    dw command_time, time, 5
+    dw command_time, time, 4
     dw command_write, write, 5
 
 cmd_end:
