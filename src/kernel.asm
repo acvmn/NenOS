@@ -30,6 +30,7 @@ start:
     mov bx, 0
     mov di, command
     mov dl, 0
+    mov sp, 0x9e00
     jmp input
 
 zero:
@@ -151,6 +152,9 @@ back:
     jmp input
 
 check:
+    mov al, " "
+    stosb
+
     mov al, 0
     stosb
 
@@ -196,13 +200,6 @@ check_false:
 
     mov si, error
     call print
-
-    mov ax, 0
-    mov bx, 0
-    mov cx, 0
-    mov dx, 0
-    mov [first], ax
-    mov [second], ax
 
     jmp return
 
@@ -302,6 +299,8 @@ calc_second:
     lodsb
 
     cmp al, 0
+    je done
+    cmp al, " "
     je done
 
     dec si
@@ -438,7 +437,7 @@ calc:
     mov ch, 0
     mov cl, dl
     repne scasb
-    jne calc_error
+    jne check_false
 
     mov si, di
     call skip_space
@@ -504,7 +503,7 @@ copy:
     mov ch, 0
     mov cl, dl
     repne scasb
-    jne calc_error
+    jne check_false
 
     mov si, di
     call skip_space
@@ -585,7 +584,7 @@ clear:
     mov ch, 0
     mov cl, dl
     repne scasb
-    jne calc_error
+    jne check_false
 
     mov si, di
     call skip_space
@@ -662,7 +661,7 @@ run:
     mov ch, 0
     mov cl, dl
     repne scasb
-    jne calc_error
+    jne check_false
 
     mov si, di
     call skip_space
@@ -803,7 +802,7 @@ write:
     mov ch, 0
     mov cl, dl
     repne scasb
-    jne calc_error
+    jne check_false
 
     mov al, 0
     mov [command], al
@@ -1083,7 +1082,7 @@ read:
     mov ch, 0
     mov cl, dl
     repne scasb
-    jne calc_error
+    jne check_false
 
     mov si, di
     call skip_space
@@ -1124,25 +1123,6 @@ read:
     call print
     
     jmp return
-
-return:
-    mov ax, 0
-    mov bx, 0
-    mov cx, 0
-    mov dx, 0
-    mov [first], ax
-    mov [second], ax
-
-    mov si, console
-    call print
-    
-    mov si, 0
-    mov bx, 0
-    mov dx, 0
-    mov [command], dx
-    mov di, command
-    mov dl, 0
-    jmp input
 
 argc_file:
     lodsb
@@ -1207,6 +1187,30 @@ two_argc_file:
     jc calc_error
 
     jmp two_argc_file
+
+return:
+    mov ax, 0
+    mov bx, 0
+    mov cx, 0
+    mov dx, 0
+    mov [first], ax
+    mov [second], ax
+
+    mov si, console
+    call print
+
+    mov ecx, 10
+    mov edi, command
+    mov al, 0
+    rep stosb  
+    
+    mov si, 0
+    mov bx, 0
+    mov dx, 0
+    mov di, command
+    mov dl, 0
+    mov sp, 0x9e00
+    jmp input
 
 %include "../src/compiler.asm"
 
