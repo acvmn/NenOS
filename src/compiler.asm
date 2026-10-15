@@ -56,7 +56,15 @@ build:
     mov si, 0x9e00
 
     call normal
+    mov di, labels
+    call clear_buff
+    mov di, jmps
+    call clear_buff
+    mov di, bytes
+    call clear_buff
 
+    mov word [l_count], 0
+    mov word [j_count], 0
     mov di, ins_table
     mov byte [bytes], 0x90
     mov dx, 1
@@ -125,7 +133,70 @@ normal_next:
     pop si
     ret
 
+clear_buff:
+    cmp word [di], 0
+    je done
+    mov word [di], 0
+    inc di
+    jmp clear_buff
+
+ready_label:
+    push si
+    jmp is_label
+
+is_label:
+    lodsb
+    cmp al, 13
+    je label_done
+    cmp al, 0
+    je label_done
+    cmp al, ":"
+    je a_label
+    inc cx
+    jmp is_label
+
+skip_label:
+    lodsb
+    cmp al, 13
+    je label_skipped
+    cmp al, 0
+    je label_skipped
+    jmp skip_label
+
+label_skipped:
+    dec si
+    mov byte [si], 13
+    ret
+
+a_label:
+    mov di, labels
+    add di, [l_count]
+
+    sub si, cx
+    dec si
+    mov ax, si
+    stosw
+    mov ax, dx
+    stosw
+    mov ax, cx
+    stosw
+
+    add word [l_count], 6
+    pop si
+    jmp skip_label
+
+label_done:
+    pop si
+    ret
+
 ins_compare:
+    mov cx, 0
+    push di
+    call ready_label
+    pop di
+    jmp ins_loop
+
+ins_loop:
     call skip_space
 
     cmp byte [si], 0
@@ -155,7 +226,7 @@ ins_compare:
     je ins_true
 
     add di, 6
-    jmp ins_compare
+    jmp ins_loop
 
 ins_true:
     mov ax, [di + 2]
@@ -321,6 +392,7 @@ com_mov:
     inc dx
     mov al, ch
     call num_bit
+
     mov di, ins_table
     inc word [com_line]
     call skip_space
@@ -349,12 +421,76 @@ com_int:
     mov bx, dx
     mov byte [bytes + bx], cl
     inc dx
+
     mov di, ins_table
     inc word [com_line]
     call skip_space
     cmp byte [si - 1], ";"
     je skip_comment
     jmp ins_compare
+
+a_jmp:
+    mov di, jmps
+    add di, [j_count]
+
+    sub si, cx
+    dec si
+    mov ax, si
+    stosw
+    mov ax, dx
+    stosw
+    mov ax, cx
+    stosw
+
+    add word [j_count], 6
+    pop si
+    jmp skip_jmp
+
+skip_jmp:
+    lodsb
+    cmp al, 13
+    je jmp_skipped
+    cmp al, 0
+    je jmp_skipped
+    jmp skip_jmp
+
+jmp_skipped:
+    mov cx, 0x9e00
+    sub cx, 0x9e00
+    sub cx, dx
+    sub cx, 2
+    mov bx, dx
+    mov byte [bytes + bx], cl
+    inc dx
+    mov bx, dx
+    mov byte [bytes + bx], ch
+    inc dx
+
+    mov di, ins_table
+    inc word [com_line]
+    call skip_space
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
+jmp_ready:
+    add si, 3
+    call skip_space
+    push si
+    jmp jmp_label
+
+jmp_label:
+    lodsb
+    cmp al, ";"
+    je a_jmp
+    cmp al, " "
+    je a_jmp
+    cmp al, 13
+    je a_jmp
+    cmp al, 0
+    je a_jmp
+    inc cx
+    jmp jmp_label
 
 com_jmp:
     mov bx, dx
@@ -366,6 +502,12 @@ com_jmp:
     add si, 4
     call skip_space
     sub si, 4
+
+    mov cx, 0
+    cmp byte [si + 4], "0"
+    jl jmp_ready
+    cmp byte [si + 4], "9"
+    jg jmp_ready
 
     push dx
     call com_arg
@@ -381,6 +523,7 @@ com_jmp:
     mov bx, dx
     mov byte [bytes + bx], ch
     inc dx
+
     mov di, ins_table
     inc word [com_line]
     call skip_space
@@ -646,4 +789,8 @@ ins_end:
 
 syntax: db "Syntax error: ", 0
 
+labels: times 3 * 512 dw 0
+l_count: dw 0
+jmps: times 3 * 512 dw 0
+j_count: dw 0
 bytes: times 512 db 0

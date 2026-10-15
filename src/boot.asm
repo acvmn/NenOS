@@ -4,7 +4,7 @@ start:
     xor ax, ax
     mov es, ax
     mov ah, 0x02
-    mov al, 24
+    mov al, 40
     mov ch, 0
     mov cl, 2
     mov dl, 0x80

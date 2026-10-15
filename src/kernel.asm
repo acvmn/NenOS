@@ -1199,8 +1199,8 @@ return:
     mov si, console
     call print
 
-    mov ecx, 10
-    mov edi, command
+    mov cx, 256
+    mov di, command
     mov al, 0
     rep stosb  
     
@@ -1273,6 +1273,6 @@ cmd_end:
 command: times 256 db 0
 document: times 512 db 0
 
-times 8192-($-$$) db 0
+times 16384-($-$$) db 0
 
 font: incbin "../src/cp866-8x16.fnt"
