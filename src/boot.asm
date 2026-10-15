@@ -1,6 +1,7 @@
 org 0x7c00
 
 start:
+    xor ax, ax
     mov es, ax
     mov ah, 0x02
     mov al, 24
