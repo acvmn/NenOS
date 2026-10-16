@@ -68,7 +68,6 @@ build:
     mov di, ins_table
     mov byte [bytes], 0x90
     mov dx, 1
-    mov word [com_line], 0
     jmp ins_compare
 
 skip_space:
@@ -198,7 +197,6 @@ label_done:
     ret
 
 ins_compare:
-    inc word [com_line]
     mov cx, 0
     push di
     call ready_label
@@ -387,10 +385,28 @@ bin:
     jmp return
 
 build_error:
-    pop ax
+    mov bx, 0x9e00
+    xor cx, cx
+    jmp error_count
+
+error_count:
+    cmp bx, si
+    jae error_done
+    cmp byte [bx], 13
+    jne error_next
+    inc cx
+    jmp error_next
+
+error_next:
+    inc bx
+    jmp error_count
+
+error_done:
+    inc cx
+    push cx
     mov si, syntax
     call print
-    mov ax, [com_line]
+    pop ax
     mov dx, 0
     call number
     mov si, enter
@@ -856,9 +872,6 @@ com_two:
     add si, 2
     ret
 
-com_line: dw 0
-com_bit: db 0
-
 reg_al: db "al"
 reg_cl: db "cl"
 reg_dl: db "dl"
@@ -909,6 +922,7 @@ ins_end:
 
 syntax: db "Syntax error: ", 0
 
+com_bit: db 0
 labels: times 3 * 512 dw 0
 l_count: dw 0
 jmps: times 3 * 512 dw 0
