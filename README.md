@@ -16,17 +16,36 @@ NenOS is an operating system written in NASM assembly language. It runs in real 
 
 ## Assembler
 The built‑in NenOS assembler currently supports the MOV to all 16 bit registers, all interrupts, JMP, labels and the entire syntax of a standard assembler. This allows you to write simple programs using the WRITE command, compile them using the BUILD command, and run them using the RUN command. Code examples:
+Loop:
 ```
-mov al, "!"
-mov ah, 0x0e
-int 0x10
+main:
+    mov al, "!"
+    mov ah, 0x0e
+    int 0x10
+    jmp main
 ```
+Test labels and JMPs:
 ```
-mov ah, 0x00
-int 0x16
-mov ah, 0x0e
-int 0x10
-jmp 0x9e00
+main:
+    mov al, "!"
+    mov ah, 0x0e
+    int 0x10
+    jmp end
+
+end:
+    mov al, "?"
+    mov ah, 0x0e
+    int 0x10
+    jmp main
+```
+Simple edit:
+```
+main:
+    mov ah, 0x00
+    int 0x16
+    mov ah, 0x0e
+    int 0x10
+    jmp main
 ```
 
 ## Screenshots
