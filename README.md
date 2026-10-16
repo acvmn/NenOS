@@ -15,38 +15,43 @@ NenOS is an operating system written in NASM assembly language. It runs in real 
 - WRITE &lt;number&gt; - write the document.
 
 ## Assembler
-The built‑in NenOS assembler currently supports the MOV to all 16 bit registers, all interrupts, JMP, labels and the entire syntax of a standard assembler. This allows you to write simple programs using the WRITE command, compile them using the BUILD command, and run them using the RUN command. Code examples:
-
-Loop:
+The built‑in NenOS assembler currently supports the MOV to all 16 bit registers, all interrupts, JMP, labels and the entire syntax of a standard assembler. This allows you to write simple programs using the WRITE command, compile them using the BUILD command, and run them using the RUN command. Code example:
 ```
-main:
-    mov al, "!"
-    mov ah, 0x0e
-    int 0x10
-    jmp main
-```
-Test labels and JMPs:
-```
-main:
-    mov al, "!"
-    mov ah, 0x0e
-    int 0x10
-    jmp end
-
-end:
-    mov al, "?"
-    mov ah, 0x0e
-    int 0x10
-    jmp main
-```
-Simple edit:
-```
-main:
+write:
     mov ah, 0x00
     int 0x16
+    cmp al, 8
+    je delete
+    cmp al, 13
+    je new
+    cmp al, 27
+    je exit
     mov ah, 0x0e
     int 0x10
-    jmp main
+    jmp write
+
+delete:
+    mov al, 8
+    mov ah, 0x0e
+    int 0x10
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+    mov al, 8
+    mov ah, 0x0e
+    int 0x10
+    jmp write
+
+new:
+    mov al, 10
+    mov ah, 0x0e
+    int 0x10
+    mov al, 13
+    mov ah, 0x0e
+    int 0x10
+    jmp write
+
+exit:
 ```
 
 ## Screenshots
