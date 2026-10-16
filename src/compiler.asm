@@ -68,12 +68,7 @@ build:
     mov di, ins_table
     mov byte [bytes], 0x90
     mov dx, 1
-    mov word [com_line], 1
-    jmp ins_compare
-
-skip_line:
-    inc si
-    inc word [com_line]
+    mov word [com_line], 0
     jmp ins_compare
 
 skip_space:
@@ -89,6 +84,10 @@ skip_comment:
     je skip_done
     inc si
     jmp skip_comment
+
+skip_line:
+    inc si
+    jmp ins_compare
 
 skip_done:
     inc si
@@ -140,6 +139,24 @@ clear_buff:
     inc di
     jmp clear_buff
 
+is_comment:
+    cmp ah, 0xff
+    je skip_label
+    cmp al, ";"
+    jne build_error
+    mov ah, 0xff
+    jmp skip_label
+
+skip_label:
+    lodsb
+    cmp al, 13
+    je done
+    cmp al, 0
+    je done
+    cmp al, " "
+    jne is_comment
+    jmp skip_label
+
 ready_label:
     push si
     jmp is_label
@@ -155,22 +172,11 @@ is_label:
     inc cx
     jmp is_label
 
-skip_label:
-    lodsb
-    cmp al, 13
-    je label_skipped
-    cmp al, 0
-    je label_skipped
-    jmp skip_label
-
-label_skipped:
-    dec si
-    mov byte [si], 13
-    ret
-
 a_label:
     mov di, labels
     add di, [l_count]
+
+    call check_dup
 
     sub si, cx
     dec si
@@ -183,6 +189,8 @@ a_label:
 
     add word [l_count], 6
     pop si
+    add si, cx
+    inc si
     jmp skip_label
 
 label_done:
@@ -190,6 +198,7 @@ label_done:
     ret
 
 ins_compare:
+    inc word [com_line]
     mov cx, 0
     push di
     call ready_label
@@ -241,10 +250,127 @@ ins_false:
     mov [second], ax
     jmp build_error
 
+resolve_jmps:
+    xor bp, bp
+    jmp next_jmp
+
+next_jmp:
+    cmp bp, [j_count]
+    jae done
+
+    mov di, jmps
+    add di, bp
+    mov si, [di]
+    mov dx, [di + 2]
+    mov cx, [di + 4]
+
+    mov di, labels
+    xor bx, bx
+    jmp next_label
+
+next_label:
+    cmp bx, [l_count]
+    jae build_error
+
+    mov ax, [di + 4]
+    cmp ax, cx
+    jne skip
+
+    push si
+    push di
+    push cx
+    mov di, [di]
+    jmp label_cmp
+
+skip:
+    add di, 6
+    add bx, 6
+    jmp next_label
+
+label_cmp:
+    test cx, cx
+    jz match
+    mov al, [si]
+    cmp al, [di]
+    jne diff
+    inc si
+    inc di
+    dec cx
+    jmp label_cmp
+
+diff:
+    pop cx
+    pop di
+    pop si
+    add di, 6
+    add bx, 6
+    jmp next_label
+
+match:
+    pop cx
+    pop di
+    pop si
+    mov ax, [di + 2]
+    sub ax, dx
+    sub ax, 2
+    mov bx, dx
+    mov [bytes + bx], al
+    mov [bytes + bx + 1], ah
+    add bp, 6
+    jmp next_jmp
+
+check_dup:
+    mov di, labels
+    xor bx, bx
+
+dup_loop:
+    cmp bx, [l_count]
+    jae done
+
+    mov ax, [di + 4]
+    cmp ax, cx
+    jne dup_skip
+
+    push si
+    push di
+    push cx
+    mov di, [di]
+
+dup_cmp:
+    test cx, cx
+    jz dup_found
+    mov al, [si]
+    cmp al, [di]
+    jne dup_diff
+    inc si
+    inc di
+    dec cx
+    jmp dup_cmp
+
+dup_found:
+    pop cx
+    pop di
+    pop si
+    jmp build_error
+
+dup_diff:
+    pop cx
+    pop di
+    pop si
+    jmp skip
+
+dup_skip:
+    add di, 6
+    add bx, 6
+    jmp dup_loop
+
 bin:
     mov bx, dx
     mov byte [bytes + bx], 0xc3
     inc dx
+
+    xor bp, bp
+    call resolve_jmps
 
     mov si, bytes
     mov cx, 512
@@ -261,6 +387,7 @@ bin:
     jmp return
 
 build_error:
+    pop ax
     mov si, syntax
     call print
     mov ax, [com_line]
@@ -345,7 +472,6 @@ mov_reg:
     inc dx
 
     mov di, ins_table
-    inc word [com_line]
     call skip_space
     inc si
     cmp byte [si - 1], ";"
@@ -394,7 +520,6 @@ com_mov:
     call num_bit
 
     mov di, ins_table
-    inc word [com_line]
     call skip_space
     cmp byte [si - 1], ";"
     je skip_comment
@@ -423,7 +548,6 @@ com_int:
     inc dx
 
     mov di, ins_table
-    inc word [com_line]
     call skip_space
     cmp byte [si - 1], ";"
     je skip_comment
@@ -455,10 +579,8 @@ skip_jmp:
     jmp skip_jmp
 
 jmp_skipped:
-    mov cx, 0x9e00
-    sub cx, 0x9e00
-    sub cx, dx
-    sub cx, 2
+    mov cx, 0
+    sub cx, 3
     mov bx, dx
     mov byte [bytes + bx], cl
     inc dx
@@ -467,7 +589,6 @@ jmp_skipped:
     inc dx
 
     mov di, ins_table
-    inc word [com_line]
     call skip_space
     cmp byte [si - 1], ";"
     je skip_comment
@@ -525,7 +646,6 @@ com_jmp:
     inc dx
 
     mov di, ins_table
-    inc word [com_line]
     call skip_space
     cmp byte [si - 1], ";"
     je skip_comment

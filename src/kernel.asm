@@ -119,13 +119,21 @@ input:
     mov ah, 0x0e
     int 0x10
     inc dl
-    call to_lower
     stosb
     jmp input
 
 input_change:
     xor byte [lang], 1
     jmp input
+
+cmd_lower:
+    mov al, [si]
+    cmp al, " "
+    je done
+    call to_lower
+    mov [si], al
+    inc si
+    jmp cmd_lower
 
 to_lower:
     cmp al, "A"
@@ -166,6 +174,10 @@ check:
     mov di, cmd_table
 
     call skip_space
+
+    push si
+    call cmd_lower
+    pop si
 
     jmp check_compare
 
@@ -241,6 +253,7 @@ cp866_done:
     ret
 
 calc_error:
+    pop ax
     mov si, argcs
     call print
     jmp return
