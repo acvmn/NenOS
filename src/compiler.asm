@@ -310,12 +310,26 @@ match:
     pop si
     mov ax, [di + 2]
     sub ax, dx
+    mov bx, dx
+    dec bx
+    mov bl, [bytes + bx]
+    cmp bl, 0xe9
+    je jmp_long
+    sub ax, 1
+    mov bx, dx
+    mov [bytes + bx], al
+    jmp match_next
+
+match_next:
+    add bp, 6
+    jmp next_jmp
+
+jmp_long:
     sub ax, 2
     mov bx, dx
     mov [bytes + bx], al
     mov [bytes + bx + 1], ah
-    add bp, 6
-    jmp next_jmp
+    jmp match_next
 
 check_dup:
     mov di, labels
@@ -667,6 +681,218 @@ com_jmp:
     je skip_comment
     jmp ins_compare
 
+cmp_reg:
+    mov al, 0x38
+    cmp ch, 2
+    jne op
+    mov al, 0x39
+    jmp op
+
+op:
+    push bx
+    mov bx, dx
+    mov byte [bytes + bx], al
+    call reg_16
+    inc dx
+    pop bx
+
+    mov al, 0xc0
+    shl bl, 3
+    or al, bl
+    or al, cl
+    mov bx, dx
+    mov byte [bytes + bx], al
+    inc dx
+
+    mov di, ins_table
+    call skip_space
+    inc si
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
+com_cmp:
+    mov di, reg_table
+    cmp byte [si + 3], " "
+    jne build_error
+    add si, 4
+
+    call skip_space
+
+    call reg_compare
+    mov [com_bit], ch
+    call fst_bit
+
+    add si, 2
+    call skip_space
+    sub si, 2
+    cmp byte [si + 2], ","
+    jne build_error
+
+    add si, 4
+    call skip_space
+    sub si, 4
+
+    call sec_reg
+    cmp al, 1
+    je cmp_reg
+
+    push cx
+    push dx
+    call com_arg
+    pop dx
+    pop bx
+    cmp bl, 0
+    jne not_al
+    cmp bh, 2
+    je op_ax
+    
+    mov bx, dx
+    mov byte [bytes + bx], 0x3c
+    inc dx
+    jmp write_imm
+
+a_je:
+    mov di, jmps
+    add di, [j_count]
+
+    sub si, cx
+    dec si
+    mov ax, si
+    stosw
+    mov ax, dx
+    stosw
+    mov ax, cx
+    stosw
+
+    add word [j_count], 6
+    pop si
+    jmp skip_je
+
+skip_je:
+    lodsb
+    cmp al, 13
+    je je_skipped
+    cmp al, 0
+    je je_skipped
+    jmp skip_je
+
+je_skipped:
+    mov cx, 0
+    sub cx, 2
+    mov bx, dx
+    mov byte [bytes + bx], 0
+    inc dx
+    mov di, ins_table
+    call skip_space
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
+je_ready:
+    add si, 2
+    call skip_space
+    push si
+    jmp je_label
+
+je_label:
+    lodsb
+    cmp al, ";"
+    je a_je
+    cmp al, " "
+    je a_je
+    cmp al, 13
+    je a_je
+    cmp al, 0
+    je a_je
+    inc cx
+    jmp je_label
+
+com_je:
+    mov bx, dx
+    mov byte [bytes + bx], 0x74
+    inc dx
+    cmp byte [si + 2], " "
+    jne build_error
+
+    add si, 4
+    call skip_space
+    sub si, 4
+
+    mov cx, 0
+    cmp byte [si + 4], "0"
+    jl je_ready
+    cmp byte [si + 4], "9"
+    jg je_ready
+
+    push dx
+    call com_arg
+    pop dx
+    cmp bh, "x"
+    je build_error
+    sub cx, 0x9e00
+    sub cx, dx
+    sub cx, 2
+    mov bx, dx
+    mov byte [bytes + bx], cl
+    inc dx
+    mov bx, dx
+    mov byte [bytes + bx], ch
+    inc dx
+
+    mov di, ins_table
+    call skip_space
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
+op_ax:
+    mov bx, dx
+    mov byte [bytes + bx], 0x3d
+    inc cx
+    jmp write_imm
+
+not_al:
+    cmp bh, 2
+    je op_other
+    mov bx, dx
+    mov byte [bytes + bx], 0x80
+    inc dx
+    mov al, 0xf8
+    or al, bl
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+    jmp write_imm
+
+op_other:
+    mov bx, dx
+    mov byte [bytes + bx], 0x81
+    inc dx
+    mov al, 0xf8
+    or al, bl
+    mov [bytes + bx], al
+    inc dx
+    jmp write_imm
+
+write_imm:
+    mov bx, dx
+    mov [bytes + bx], cl
+    inc dx
+    cmp byte [com_bit], 1
+    je cmp_done
+    mov bx, dx
+    mov [bytes + bx], ch
+    inc dx
+    jmp cmp_done
+
+cmp_done:
+    mov di, ins_table
+    call skip_space
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
 fst_bit:
     cmp ch, 2
     je fst_16
@@ -912,11 +1138,15 @@ reg_end:
 ins_mov: db "mov"
 ins_int: db "int"
 ins_jmp: db "jmp"
+ins_cmp: db "cmp"
+ins_je: db "je"
 
 ins_table:
     dw ins_mov, com_mov, 3
     dw ins_int, com_int, 3
     dw ins_jmp, com_jmp, 3
+    dw ins_cmp, com_cmp, 3
+    dw ins_je, com_je, 2
 
 ins_end:
 
