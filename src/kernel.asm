@@ -30,7 +30,6 @@ start:
     mov bx, 0
     mov di, command
     mov dl, 0
-    mov sp, 0x9e00
     jmp input
 
 zero:
@@ -1222,7 +1221,6 @@ return:
     mov dx, 0
     mov di, command
     mov dl, 0
-    mov sp, 0x9e00
     jmp input
 
 %include "../src/compiler.asm"
