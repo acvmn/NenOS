@@ -168,8 +168,17 @@ is_label:
     je label_done
     cmp al, ":"
     je a_label
+    cmp al, " "
+    je build_error
     inc cx
     jmp is_label
+
+check_label:
+    cmp byte [si], "0"
+    jb a_label
+    cmp byte [si], "9"
+    ja a_label
+    jmp build_error
 
 a_label:
     mov di, labels
@@ -196,12 +205,23 @@ label_done:
     pop si
     ret
 
+is_next:
+    cmp byte [si + bx], ":"
+    je ins_compare
+    cmp byte [si + bx], 13
+    je ins_loop
+    cmp byte [si + bx], 0
+    je ins_loop
+    inc bx
+    jmp is_next
+
 ins_compare:
     mov cx, 0
     push di
     call ready_label
     pop di
-    jmp ins_loop
+    mov bx, 0
+    jmp is_next
 
 ins_loop:
     call skip_space
@@ -334,6 +354,7 @@ jmp_long:
 check_dup:
     mov di, labels
     xor bx, bx
+    jmp dup_loop
 
 dup_loop:
     cmp bx, [l_count]
@@ -347,6 +368,7 @@ dup_loop:
     push di
     push cx
     mov di, [di]
+    jmp dup_cmp
 
 dup_cmp:
     test cx, cx
@@ -369,7 +391,7 @@ dup_diff:
     pop cx
     pop di
     pop si
-    jmp skip
+    jmp dup_skip
 
 dup_skip:
     add di, 6
