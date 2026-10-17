@@ -1288,5 +1288,3 @@ document: times 512 db 0
 times 16384-($-$$) db 0
 
 font: incbin "../src/cp866-8x16.fnt"
-
-times 130560-($-$$) db 0
