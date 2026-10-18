@@ -1,54 +1,31 @@
 build:
-	mov al, 0
-    mov [file], al
-
     mov di, si
     mov al, " "
     mov ch, 0
     mov cl, dl
     repne scasb
-    jne calc_error
+    jne check_false
 
     mov si, di
     call skip_space
     mov cl, 0
-    call two_argc_file
+    call argc_file
 
-    cmp al, 0
-    je calc_error
-
-    cmp cl, 0
-    je calc_error
-
-    mov al, 0
-    cmp [file], al
-    je calc_error
-
-    mov bh, [file]
-
-    mov al, 0
-    mov [file], al
+    mov bh, cl
 
     call skip_space
     mov cl, 0
     call argc_file
+    push cx
 
     call skip_space
     cmp byte [si], 0
     jne calc_error
 
-    cmp cl, 0
-    je calc_error
-
-    mov al, 0
-    cmp [file], al
-    je calc_error
-
     mov ah, 0x02
     mov al, 1
     mov ch, 0
     mov cl, bh
-    add cl, 25
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -411,9 +388,7 @@ bin:
     mov bx, bytes
     mov ah, 0x03
     mov al, 1
-    mov ch, 0
-    mov cl, [file]
-    add cl, 25
+    pop cx
     mov dl, 0x80
     mov dh, 0
     int 0x13

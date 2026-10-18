@@ -458,8 +458,6 @@ calc:
     call calc_first
 
     call skip_space
-    cmp byte [si], 0
-    jne calc_error
 
     cmp dl, 0
     je calc_error
@@ -484,11 +482,15 @@ to_space:
     jmp to_space
 
 cls:
+    push si
+    mov di, si
     call to_space
+    sub si, di
+    cmp si, 4
+    ja check_false
+    pop si
     dec si
     call skip_space
-    cmp byte [si], 0
-    jne calc_error
 
     mov ah, 0x06
     mov al, 0x00
@@ -507,10 +509,16 @@ cls:
     
     jmp return
 
-copy:
-    mov al, 0
-    mov [file], al
+found:
+    mov si, di
+    call print
 
+    mov si, enter
+    call print
+
+    jmp return
+
+copy:
     mov di, si
     mov al, " "
     mov ch, 0
@@ -521,48 +529,25 @@ copy:
     mov si, di
     call skip_space
     mov cl, 0
-    call two_argc_file
+    call argc_file
+    mov [src], cl
 
-    cmp al, 0
-    je calc_error
-
-    cmp cl, 0
-    je calc_error
-
-    mov al, 0
-    cmp [file], al
-    je calc_error
-
-    mov bh, [file]
-
-    mov al, 0
-    mov [file], al
+    call to_space
 
     call skip_space
     mov cl, 0
     call argc_file
-
-    call skip_space
-    cmp byte [si], 0
-    jne calc_error
-
-    cmp cl, 0
-    je calc_error
-
-    mov al, 0
-    cmp [file], al
-    je calc_error
+    mov [dst], cl
 
     mov dx, 0
     mov [0x9e00], dx
 
     mov ah, 0x02
     mov al, 1
-    mov ch, 0
-    mov cl, bh
-    add cl, 25
     mov dl, 0x80
     mov dh, 0
+    mov ch, 0
+    mov cl, [src]
     mov bx, 0x9e00
     int 0x13
 
@@ -577,21 +562,14 @@ copy:
     mov ah, 0x03
     mov al, 1
     mov ch, 0
-    mov cl, [file]
-    add cl, 25
+    mov cl, [dst]
     mov dl, 0x80
     mov dh, 0
     int 0x13
 
     jmp return
 
-clear:
-    mov al, 0
-    mov [document], al
-
-    mov al, 0
-    mov [file], al
-
+create:
     mov di, si
     mov al, " "
     mov ch, 0
@@ -601,49 +579,296 @@ clear:
 
     mov si, di
     call skip_space
-    mov cl, 0
-    call argc_file
+    push si
 
-    call skip_space
-    cmp byte [si], 0
-    jne calc_error
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, 26
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
 
-    cmp cl, 0
-    je calc_error
+    mov cx, 32
+    mov bx, 0x9e00
+    jmp create_dup
 
-    mov al, 0
-    cmp [file], al
-    je calc_error
+create_dup:
+    cmp byte [bx], 0
+    je next_dup
+    push bx
+    push si
+    mov dx, 15
+    jmp cmp_dup
 
-    mov si, document
-    mov cx, 512
-    mov bx, document
+cmp_dup:
+    mov al, [bx]
+    mov ah, [si]
+
+    cmp ah, 0
+    je dup_end
+
+    cmp al, ah
+    jne not_dup
+
+    cmp al, 0
+    je create_exists
+
+    inc bx
+    inc si
+    dec dx
+    jnz cmp_dup
+    jmp create_exists
+
+dup_end:
+    cmp al, 0
+    je create_exists
+    jmp not_dup
+
+not_dup:
+    pop si
+    pop bx
+    jmp next_dup
+
+next_dup:
+    add bx, 16
+    dec cx
+    jnz create_dup
+    mov bx, 0x9e00
+    mov cx, 32
+    jmp file_empty
+
+file_empty:
+    cmp byte [bx], 0
+    je empty_found
+    add bx, 16
+    dec cx
+    jnz file_empty
+    mov si, full
+    call print
+    jmp return
+
+create_exists:
+    pop si
+    pop bx
+    pop si
+    mov si, exists
+    call print
+    jmp return
+
+empty_found:
+    mov ax, bx
+    sub ax, 0x9e00
+    shr ax, 4
+    inc ax
+    mov dx, ax
+    mov di, bx
+    pop si
+    mov cx, 15
+    jmp create_copy
+
+create_copy:
+    lodsb
+    cmp al, 0
+    je create_zero
+    stosb
+    loop create_copy
+    jmp write_sector
+
+create_zero:
+    xor al, al
+    stosb
+    loop create_zero
+    jmp write_sector
+
+write_sector:
+    add dx, 26
+    mov ax, dx
+    mov [di], al
+
     mov ah, 0x03
     mov al, 1
     mov ch, 0
-    mov cl, [file]
-    add cl, 25
+    mov cl, 26
     mov dl, 0x80
     mov dh, 0
+    mov bx, 0x9e00
     int 0x13
-    
+
     jmp return
 
-found:
+pad_zero:
+    xor al, al
+    stosb
+    loop pad_zero
+    jmp write_sector
+
+delete:
+    mov di, si
+    mov al, " "
+    mov ch, 0
+    mov cl, dl
+    repne scasb
+    jne check_false
+
     mov si, di
+    call skip_space
+    push si
+
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, 26
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
+
+    mov cx, 32
+    mov bx, 0x9e00
+    jmp delete_loop
+
+delete_loop:
+    cmp byte [bx], 0
+    je delete_next
+    push bx
+    push si
+    mov dx, 15
+    jmp delete_cmp
+
+delete_cmp:
+    mov al, [bx]
+    cmp al, [si]
+    jne delete_differ
+    cmp al, 0
+    je delete_found
+    inc bx
+    inc si
+    dec dx
+    jnz delete_cmp
+    jmp delete_found
+
+delete_differ:
+    pop si
+    pop bx
+    jmp delete_next
+
+delete_next:
+    add bx, 16
+    dec cx
+    jnz delete_loop
+
+    pop si
+    mov si, not_found
+    call print
+    jmp return
+
+delete_found:
+    pop si
+    pop bx
+    mov cx, 16
+    jne delete_delete
+
+delete_delete:
+    mov byte [bx], 0
+    inc bx
+    loop delete_delete
+
+    mov ah, 0x03
+    mov al, 1
+    mov ch, 0
+    mov cl, 26
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
+
+    jmp return
+
+dir:
+    push si
+    mov di, si
+    call to_space
+    sub si, di
+    cmp si, 4
+    ja check_false
+    pop si
+    dec si
+    call skip_space
+    push si
+
+    mov si, dir_list
     call print
 
-    mov si, enter
-    call print
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, 26
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
 
+    mov cx, 32
+    xor bl, bl
+    mov si, 0x9e00
+    jmp dir_loop
+
+dir_loop:
+    cmp byte [si], 0
+    je dir_next
+
+    mov bl, 1
+    push si
+    mov dx, 15
+
+    push si
+    mov si, dir_tab
+    call print
+    pop si
+
+    jmp dir_print
+
+dir_print:
+    mov al, [si]
+    cmp al, 0
+    je dir_line
+    mov ah, 0x0e
+    int 0x10
+    inc si
+    dec dx
+    jnz dir_print
+    jmp dir_line
+
+dir_line:
+    pop si
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+    mov al, 13
+    mov ah, 0x0e
+    int 0x10
+    mov al, 10
+    int 0x10
+    jmp dir_next
+
+dir_next:
+    add si, 16
+    dec cx
+    jnz dir_loop
     jmp return
 
 help:
+    push si
+    mov di, si
     call to_space
+    sub si, di
+    cmp si, 5
+    ja check_false
+    pop si
     dec si
     call skip_space
-    cmp byte [si], 0
-    jne calc_error
 
     mov si, available_commands
     call print
@@ -651,11 +876,15 @@ help:
     jmp return
 
 reboot:
+    push si
+    mov di, si
     call to_space
+    sub si, di
+    cmp si, 7
+    ja check_false
+    pop si
     dec si
     call skip_space
-    cmp byte [si], 0
-    jne calc_error
 
     jmp 0xffff:0x0000
 
@@ -666,9 +895,6 @@ run_error:
     jmp return
 
 run:
-    mov al, 0
-    mov [file], al
-
     mov di, si
     mov al, " "
     mov ch, 0
@@ -682,15 +908,6 @@ run:
     call argc_file
 
     call skip_space
-    cmp byte [si], 0
-    jne calc_error
-
-    cmp cl, 0
-    je calc_error
-
-    mov al, 0
-    cmp [file], al
-    je calc_error
 
     mov dx, 0
     mov [0x9e00], dx
@@ -698,8 +915,6 @@ run:
     mov ah, 0x02
     mov al, 1
     mov ch, 0
-    mov cl, [file]
-    add cl, 25
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -738,11 +953,15 @@ break:
     jmp return
 
 time:
+    push si
+    mov di, si
     call to_space
+    sub si, di
+    cmp si, 5
+    ja check_false
+    pop si
     dec si
     call skip_space
-    cmp byte [si], 0
-    jne calc_error
     jmp bcd
 
 bcd:
@@ -807,9 +1026,6 @@ convert:
     ret
 
 write:
-    mov al, 0
-    mov [file], al
-
     mov di, si
     mov al, " "
     mov ch, 0
@@ -824,17 +1040,8 @@ write:
     call skip_space
     mov cl, 0
     call argc_file
-
-    call skip_space
-    cmp byte [si], 0
-    jne calc_error
-
-    cmp cl, 0
-    je calc_error
-
-    mov al, 0
-    cmp [file], al
-    je calc_error
+    mov ch, 0
+    push cx
 
     mov si, press_esc
     call print
@@ -845,8 +1052,6 @@ write:
     mov ah, 0x02
     mov al, 1
     mov ch, 0
-    mov cl, [file]
-    add cl, 25
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -915,9 +1120,7 @@ save:
     mov bx, document
     mov ah, 0x03
     mov al, 1
-    mov ch, 0
-    mov cl, [file]
-    add cl, 25
+    pop cx
     mov dl, 0x80
     mov dh, 0
     int 0x13
@@ -1087,9 +1290,6 @@ line_done:
     ret
 
 read:
-    mov al, 0
-    mov [file], al
-
     mov di, si
     mov al, " "
     mov ch, 0
@@ -1102,25 +1302,12 @@ read:
     mov cl, 0
     call argc_file
 
-    call skip_space
-    cmp byte [si], 0
-    jne calc_error
-
-    cmp cl, 0
-    je calc_error
-
-    mov al, 0
-    cmp [file], al
-    je calc_error
-
     mov dx, 0
     mov [0x9e00], dx
 
     mov ah, 0x02
     mov al, 1
     mov ch, 0
-    mov cl, [file]
-    add cl, 25
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -1138,68 +1325,78 @@ read:
     jmp return
 
 argc_file:
-    lodsb
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, 26
+    mov dh, 0
+    mov dl, 0x80
+    mov bx, 0x9e00
+    int 0x13
+
+    mov bx, 0x9e00
+    mov cx, 32
+
+    jmp search_file
+
+search_file:
+    cmp byte [bx], 0
+    je search_next
+
+    push bx
+    push si
+    
+    mov dx, 15
+    jmp search_loop
+
+search_end:
+    cmp ah, 0
+    je search_match
+
+not_search:
+    pop si
+    pop bx
+    jmp search_next
+
+search_next:
+    add bx, 16
+    dec cx
+    jnz search_file
+    jmp search_fail
+
+search_match:
+    pop si
+    pop bx
+    mov al, [bx + 15]
+    mov ah, 1
+    xchg al, ah
+    mov cl, ah
+    ret
+
+search_fail:
+    pop ax
+    xor ax, ax
+    mov si, not_found
+    call print
+    jmp return
+
+search_loop:
+    mov al, [si]
+    mov ah, [bx]
 
     cmp al, 0
-    je done
+    je search_end
     cmp al, " "
-    je done
+    je search_match
 
-    dec si
+    cmp al, ah
+    jne not_search
 
-    mov al, [file]
-    mov ah, 0
-    mov bl, 10
-    mul bl
-    cmp ah, 0
-    jne calc_error
-    mov [file], al
-
-    lodsb
-
-    mov cl, al
-
-    cmp al, "0"
-    jl calc_error
-    cmp al, "9"
-    jg calc_error
-    sub al, "0"
-    add [file], al
-    jc calc_error
-
-    jmp argc_file
-
-two_argc_file:
-    lodsb
-
-    cmp al, " "
-    je done
-    cmp al, 0
-    je done
-
-    dec si
-
-    mov al, [file]
-    mov ah, 0
-    mov bl, 10
-    mul bl
-    cmp ah, 0
-    jne calc_error
-    mov [file], al
-
-    lodsb
-
-    mov cl, al
-
-    cmp al, "0"
-    jl calc_error
-    cmp al, "9"
-    jg calc_error
-    sub al, "0"
-    add [file], al
-    jc calc_error
-
-    jmp two_argc_file
+    inc si
+    inc bx
+    dec dx
+    jnz search_loop
+    jmp search_match
 
 return:
     mov ax, 0
@@ -1229,7 +1426,12 @@ return:
 welcome: db "Welcome to NenOS!", 13, "Type <help> to show available commands.", 13, "Press <TAB> to change language.", 13, 0
 console: db "NenOS> ", 0
 argcs: db "Arguments error.", 13, 0
-available_commands: db "Available Commands:", 13, "   1. BUILD <from> <to> - compile the file.", 13, "   2. CALC <sample> - calculate.", 13, "   3. CLEAR <number> - clear the document.", 13, "   4. CLS - clear the screen.", 13, "   5. COPY <from> <to> - copy the document.", 13, "   6. HELP - displaying available commands.", 13, "   7. READ <number> - read the document.", 13, "   8. REBOOT - reboot the computer.", 13, "   9. RUN <number> - run the script.", 13, "  10. TIME - launches the watch app.", 13, "  11. WRITE <number> - write the document.", 13, 0
+full: db "Directory full.", 13, 0
+exists: db "Already exists.", 13, 0
+not_found: db "Not found.", 13, 0
+dir_list: db "Directory:", 13, 0
+dir_tab: db "   ", 0
+available_commands: db "Available Commands:", 13, "   1. BUILD <from> <to> - compile the file.", 13, "   2. CALC <sample> - calculate.", 13, "   3. CLS - clear the screen.", 13, "   4. COPY <from> <to> - copy the document.", 13, "   5. CREATE <name> - create the document.", 13, "   6. DELETE <name> - delete the document.", 13, "   7. DIR - show directory.", 13, "   8. HELP - displaying available commands.", 13, "   9. READ <name> - read the document.", 13, "  10. REBOOT - reboot the computer.", 13, "  11. RUN <name> - run the script.", 13, "  12. TIME - launches the watch app.", 13, "  13. WRITE <name> - write the document.", 13, 0
 readed: db "Document:", 13, 0
 not_bin: db "Not binary file.", 13, 0
 press_esc: db "Press <ESC> to save.", 13, 0
@@ -1239,7 +1441,39 @@ enter: db 13, 0
 lang: db 0
 first: dw 0
 second: dw 0
-file: db 0
+src: db 0
+dst: db 0
+
+command_build: db "build", 0
+command_calc: db "calc", 0
+command_cls: db "cls", 0
+command_copy: db "copy", 0
+command_create: db "create", 0
+command_delete: db "delete", 0
+command_dir: db "dir", 0
+command_help: db "help", 0
+command_read: db "read", 0
+command_reboot: db "reboot", 0
+command_run: db "run", 0
+command_time: db "time", 0
+command_write: db "write", 0
+
+cmd_table:
+    dw command_build, build, 5
+    dw command_calc, calc, 4
+    dw command_cls, cls, 3
+    dw command_copy, copy, 4
+    dw command_create, create, 6
+    dw command_delete, delete, 6
+    dw command_dir, dir, 3
+    dw command_help, help, 4
+    dw command_read, read, 4
+    dw command_reboot, reboot, 6
+    dw command_run, run, 3
+    dw command_time, time, 4
+    dw command_write, write, 5
+
+cmd_end:
 
 lower:
     times 0x10 db 0
@@ -1254,33 +1488,6 @@ upper:
     db 0x82, 0x80, 0x8f, 0x90, 0x8e, 0x8b, 0x84, 0x86, 0x9d, 0xf0, 0, 0, 0x9f, 0x97, 0x91, 0x8c
     db 0x88, 0x92, 0x9c, 0x81, 0x9e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     times 0xc0 db 0
-
-command_build: db "build", 0
-command_calc: db "calc", 0
-command_clear: db "clear", 0
-command_cls: db "cls", 0
-command_copy: db "copy", 0
-command_help: db "help", 0
-command_read: db "read", 0
-command_reboot: db "reboot", 0
-command_run: db "run", 0
-command_time: db "time", 0
-command_write: db "write", 0
-
-cmd_table:
-    dw command_build, build, 5
-    dw command_calc, calc, 4
-    dw command_clear, clear, 5
-    dw command_cls, cls, 3
-    dw command_copy, copy, 4
-    dw command_help, help, 4
-    dw command_read, read, 4
-    dw command_reboot, reboot, 6
-    dw command_run, run, 3
-    dw command_time, time, 4
-    dw command_write, write, 5
-
-cmd_end:
     
 command: times 256 db 0
 document: times 512 db 0
