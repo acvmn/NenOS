@@ -203,6 +203,11 @@ check_compare:
     jmp check_compare
 
 check_true:
+    mov cx, [di + 4]
+    add si, cx
+    cmp byte [si], " "
+    jne check_false
+
     mov ax, [di + 2]
     jmp ax
 
@@ -445,14 +450,6 @@ negative:
     jmp return
 
 calc:
-    mov di, si
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    jne check_false
-
-    mov si, di
     call skip_space
     mov cl, 0
     call calc_first
@@ -482,14 +479,6 @@ to_space:
     jmp to_space
 
 cls:
-    push si
-    mov di, si
-    call to_space
-    sub si, di
-    cmp si, 4
-    ja check_false
-    pop si
-    dec si
     call skip_space
 
     mov ah, 0x06
@@ -519,14 +508,6 @@ found:
     jmp return
 
 copy:
-    mov di, si
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    jne check_false
-
-    mov si, di
     call skip_space
     mov cl, 0
     call argc_file
@@ -535,6 +516,8 @@ copy:
     call to_space
 
     call skip_space
+    cmp byte [si], 0
+    je calc_error
     mov cl, 0
     call argc_file
     mov [dst], cl
@@ -570,21 +553,13 @@ copy:
     jmp return
 
 create:
-    mov di, si
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    jne check_false
-
-    mov si, di
     call skip_space
     push si
 
     mov ah, 0x02
     mov al, 1
     mov ch, 0
-    mov cl, 26
+    mov cl, 42
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -683,14 +658,14 @@ create_zero:
     jmp write_sector
 
 write_sector:
-    add dx, 26
+    add dx, 42
     mov ax, dx
     mov [di], al
 
     mov ah, 0x03
     mov al, 1
     mov ch, 0
-    mov cl, 26
+    mov cl, 42
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -705,21 +680,13 @@ pad_zero:
     jmp write_sector
 
 delete:
-    mov di, si
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    jne check_false
-
-    mov si, di
     call skip_space
     push si
 
     mov ah, 0x02
     mov al, 1
     mov ch, 0
-    mov cl, 26
+    mov cl, 42
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -767,6 +734,8 @@ delete_next:
 delete_found:
     pop si
     pop bx
+    mov al, [bx + 15]
+    mov [del_sector], al
     mov cx, 16
     jne delete_delete
 
@@ -778,7 +747,33 @@ delete_delete:
     mov ah, 0x03
     mov al, 1
     mov ch, 0
-    mov cl, 26
+    mov cl, 42
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
+
+    mov cl, [del_sector]
+    test cl, cl
+    jz return
+
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov dl, 0x80
+    mov dh, 0
+    mov bx, 0x9e00
+    int 0x13
+
+    mov di, 0x9e00
+    mov cx, 512
+    xor al, al
+    rep stosb
+
+    mov ah, 0x03
+    mov al, 1
+    mov ch, 0
+    mov cl, [del_sector]
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -787,14 +782,6 @@ delete_delete:
     jmp return
 
 dir:
-    push si
-    mov di, si
-    call to_space
-    sub si, di
-    cmp si, 4
-    ja check_false
-    pop si
-    dec si
     call skip_space
     push si
 
@@ -804,7 +791,7 @@ dir:
     mov ah, 0x02
     mov al, 1
     mov ch, 0
-    mov cl, 26
+    mov cl, 42
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -860,14 +847,6 @@ dir_next:
     jmp return
 
 help:
-    push si
-    mov di, si
-    call to_space
-    sub si, di
-    cmp si, 5
-    ja check_false
-    pop si
-    dec si
     call skip_space
 
     mov si, available_commands
@@ -876,14 +855,6 @@ help:
     jmp return
 
 reboot:
-    push si
-    mov di, si
-    call to_space
-    sub si, di
-    cmp si, 7
-    ja check_false
-    pop si
-    dec si
     call skip_space
 
     jmp 0xffff:0x0000
@@ -895,14 +866,6 @@ run_error:
     jmp return
 
 run:
-    mov di, si
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    jne check_false
-
-    mov si, di
     call skip_space
     mov cl, 0
     call argc_file
@@ -953,14 +916,6 @@ break:
     jmp return
 
 time:
-    push si
-    mov di, si
-    call to_space
-    sub si, di
-    cmp si, 5
-    ja check_false
-    pop si
-    dec si
     call skip_space
     jmp bcd
 
@@ -1026,17 +981,9 @@ convert:
     ret
 
 write:
-    mov di, si
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    jne check_false
-
     mov al, 0
     mov [command], al
 
-    mov si, di
     call skip_space
     mov cl, 0
     call argc_file
@@ -1290,14 +1237,6 @@ line_done:
     ret
 
 read:
-    mov di, si
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    jne check_false
-
-    mov si, di
     call skip_space
     mov cl, 0
     call argc_file
@@ -1328,7 +1267,7 @@ argc_file:
     mov ah, 0x02
     mov al, 1
     mov ch, 0
-    mov cl, 26
+    mov cl, 42
     mov dh, 0
     mov dl, 0x80
     mov bx, 0x9e00
@@ -1443,6 +1382,7 @@ first: dw 0
 second: dw 0
 src: db 0
 dst: db 0
+del_sector: db 0
 
 command_build: db "build", 0
 command_calc: db "calc", 0

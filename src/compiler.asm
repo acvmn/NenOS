@@ -1,31 +1,22 @@
 build:
-    mov di, si
-    mov al, " "
-    mov ch, 0
-    mov cl, dl
-    repne scasb
-    jne check_false
-
-    mov si, di
     call skip_space
     mov cl, 0
     call argc_file
+    mov [src], cl
 
-    mov bh, cl
-
-    call skip_space
-    mov cl, 0
-    call argc_file
-    push cx
+    call to_space
 
     call skip_space
     cmp byte [si], 0
-    jne calc_error
+    je calc_error
+    mov cl, 0
+    call argc_file
+    mov [dst], cl
 
     mov ah, 0x02
     mov al, 1
     mov ch, 0
-    mov cl, bh
+    mov cl, [src]
     mov dl, 0x80
     mov dh, 0
     mov bx, 0x9e00
@@ -36,8 +27,6 @@ build:
     mov di, labels
     call clear_buff
     mov di, jmps
-    call clear_buff
-    mov di, bytes
     call clear_buff
 
     mov word [l_count], 0
@@ -146,7 +135,7 @@ is_label:
     cmp al, ":"
     je a_label
     cmp al, " "
-    je build_error
+    je not_label
     inc cx
     jmp is_label
 
@@ -177,6 +166,11 @@ a_label:
     add si, cx
     inc si
     jmp skip_label
+
+not_label:
+    pop si
+    pop ax
+    jmp ins_loop
 
 label_done:
     pop si
@@ -388,7 +382,8 @@ bin:
     mov bx, bytes
     mov ah, 0x03
     mov al, 1
-    pop cx
+    mov ch, 0
+    mov cl, [dst]
     mov dl, 0x80
     mov dh, 0
     int 0x13
