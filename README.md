@@ -1,5 +1,5 @@
 ## NenOS
-NenOS is an operating system written in NASM assembly language. It runs in real mode (x16) using BIOS interrupts. It has a simple file system and a built‑in assembler. The file system in it works by numbers. For example, READ 1 reads the very first file in the file system.
+NenOS is an operating system written in NASM assembly language. It runs in real mode (x16) using BIOS interrupts. It has a simple file system and a built‑in assembler.
 
 ## Commands
 - BUILD &lt;from&gt; &lt;to&gt; - compile the file.
