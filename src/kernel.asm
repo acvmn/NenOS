@@ -7,8 +7,6 @@ start:
     mov bl, 0
     mov cx, 256
     mov dx, 0
-    push ds
-    pop es
     mov bp, font
     int 0x10
     mov ah, 0x06
@@ -263,7 +261,6 @@ cp866_done:
     ret
 
 calc_error:
-    pop ax
     mov si, argcs
     call print
     jmp return
@@ -1346,7 +1343,19 @@ search_loop:
     jnz search_loop
     jmp search_match
 
+stack:
+    pop bx
+    mov di, 0x7c00
+    sub di, 512
+    mov cx, 512
+    xor al, al
+    rep stosb
+    mov sp, 0x7c00
+    jmp bx
+
 return:
+    call stack
+
     mov ax, 0
     mov bx, 0
     mov cx, 0
