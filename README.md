@@ -4,9 +4,11 @@ NenOS is an operating system written in NASM assembly language. It runs in real 
 ## Commands
 - BUILD &lt;from&gt; &lt;to&gt; - compile the file.
 - CALC &lt;sample&gt; - calculate.
-- CLEAR &lt;number&gt; - clear the document.
 - CLS - clear the screen.
 - COPY &lt;from&gt; &lt;to&gt; - copy the document.
+- CREATE - create the document.
+- DELETE - delete the document.
+- DIR - show directory.
 - HELP - displaying available commands.
 - READ &lt;number&gt; - read the document.
 - REBOOT - reboot the computer.
