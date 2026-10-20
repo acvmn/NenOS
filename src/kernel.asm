@@ -114,6 +114,11 @@ input:
     cmp dl, 255
     je input
 
+    cmp al, 32
+    jl input
+    cmp al, 126
+    jg input
+
     call cp866
 
     mov ah, 0x0e
@@ -1047,6 +1052,10 @@ input_write:
     je input_write
     cmp al, 13
     je line
+    cmp al, 32
+    jl input_write
+    cmp al, 126
+    jg input_write
     call cp866
     stosb
     mov ah, 0x0e
