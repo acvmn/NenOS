@@ -1,7 +1,8 @@
 org 0x7e00
 
 start:
-    pop ax
+    call stack
+
     mov ax, 0x1110
     mov bh, 16
     mov bl, 0
@@ -9,6 +10,7 @@ start:
     mov dx, 0
     mov bp, font
     int 0x10
+
     mov ah, 0x06
     mov al, 0x00
     mov ch, 0
@@ -17,18 +19,25 @@ start:
     mov dl, 0x80
     mov bh, 0x07
     int 0x10
+
     mov ah, 0x02
     mov bh, 0
     mov dl, 0
     mov dh, 0
     int 0x10
+
+    mov ax, 0
+    mov bx, 0
+    mov cx, 0
+    mov dx, 0
+
     mov si, welcome
     call print
     mov si, console
     call print
-    mov bx, 0
+    
+    mov si, 0
     mov di, command
-    mov dl, 0
     jmp input
 
 zero:
@@ -102,16 +111,10 @@ input:
 
     cmp al, 8
     je back
-
     cmp al, 13
     je check
-
     cmp dl, 255
     je input
-
-    cmp dl, 255
-    je input
-
     cmp al, 32
     jl input
     cmp al, 126
@@ -178,6 +181,9 @@ check:
 
     call skip_space
 
+    cmp dl, 0
+    je return
+
     push si
     call cmd_lower
     pop si
@@ -215,9 +221,6 @@ check_true:
     jmp ax
 
 check_false:
-    cmp dl, 0
-    je return
-
     mov si, error
     call print
 
@@ -267,6 +270,7 @@ calc_error:
 
 first_space:
     lodsb
+
     cmp al, "+"
     je action_add
     cmp al, "-"
@@ -277,6 +281,7 @@ first_space:
     je action_div
     cmp al, " "
     je first_space
+
     jmp calc_error
 
 action_add:
@@ -1041,6 +1046,7 @@ input_write:
     int 0x16
     cmp ah, 0x0f
     je write_change
+
     cmp al, 8
     je back_write
     cmp al, 27
@@ -1053,6 +1059,7 @@ input_write:
     jl input_write
     cmp al, 126
     jg input_write
+
     call cp866
     stosb
     mov ah, 0x0e
@@ -1360,22 +1367,12 @@ return:
     mov bx, 0
     mov cx, 0
     mov dx, 0
-    mov [first], ax
-    mov [second], ax
 
     mov si, console
     call print
-
-    mov cx, 256
-    mov di, command
-    mov al, 0
-    rep stosb  
     
     mov si, 0
-    mov bx, 0
-    mov dx, 0
     mov di, command
-    mov dl, 0
     jmp input
 
 %include "../src/compiler.asm"

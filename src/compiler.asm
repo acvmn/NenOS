@@ -77,6 +77,7 @@ normal_end:
 
 normal_loop:
     mov al, [si]
+
     cmp al, "'"
     je normal_check
     cmp al, '"'
@@ -87,6 +88,7 @@ normal_loop:
     ja normal_next
     cmp ah, 0xff
     je normal_next
+
     add byte [si], 0x20
     jmp normal_next
 
@@ -128,6 +130,7 @@ ready_label:
 
 is_label:
     lodsb
+
     cmp al, 13
     je label_done
     cmp al, 0
@@ -136,6 +139,7 @@ is_label:
     je a_label
     cmp al, " "
     je not_label
+
     inc cx
     jmp is_label
 
@@ -183,6 +187,7 @@ is_next:
     je ins_loop
     cmp byte [si + bx], 0
     je ins_loop
+
     inc bx
     jmp is_next
 
@@ -965,6 +970,7 @@ com_arg:
     mov cx, 0
     add si, 3
     call skip_space
+
     cmp byte [si], 13
     je build_error
     cmp byte [si], 0
@@ -981,6 +987,7 @@ com_arg:
     je com_dec
     cmp byte [si + 1], "x"
     jne build_error
+
     add si, 2
     jmp com_hex
 
@@ -1004,6 +1011,7 @@ com_hex:
     mov bl, al
     pop ax
     mov cx, ax
+
     cmp bl, 0
     je done
     cmp bl, 13
@@ -1012,6 +1020,7 @@ com_hex:
     je done
     cmp bl, ";"
     je done
+
     mov bh, 0
     call check_hex
     cmp bl, "9"
