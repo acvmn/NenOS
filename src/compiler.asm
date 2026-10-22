@@ -966,6 +966,54 @@ num_16:
     inc dx
     ret
 
+com_inc:
+    mov bx, dx
+    mov byte [bytes + bx], 0x40
+    mov di, reg_table
+    cmp byte [si + 3], " "
+    jne build_error
+    add si, 4
+
+    call skip_space
+
+    call reg_compare
+    add si, 3
+    mov [com_bit], ch
+    call fst_bit
+    mov bx, dx
+    add byte [bytes + bx], cl
+    inc dx
+
+    mov di, ins_table
+    call skip_space
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
+com_dec:
+    mov bx, dx
+    mov byte [bytes + bx], 0x48
+    mov di, reg_table
+    cmp byte [si + 3], " "
+    jne build_error
+    add si, 4
+
+    call skip_space
+
+    call reg_compare
+    add si, 3
+    mov [com_bit], ch
+    call fst_bit
+    mov bx, dx
+    add byte [bytes + bx], cl
+    inc dx
+
+    mov di, ins_table
+    call skip_space
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
 reg_compare:
     cmp di, reg_end
     jae reg_false
@@ -1021,11 +1069,11 @@ com_arg:
     cmp byte [si], '"'
     je com_two
     cmp byte [si + 1], "x"
-    jne com_dec
+    jne num_dec
     cmp byte [si + 1], 13
-    je com_dec
+    je num_dec
     cmp byte [si + 1], 0
-    je com_dec
+    je num_dec
     cmp byte [si + 1], "x"
     jne build_error
 
@@ -1087,7 +1135,7 @@ is_dec:
     jc build_error
     jmp com_hex
 
-com_dec:
+num_dec:
     lodsb
 
     cmp al, 0
@@ -1120,7 +1168,7 @@ com_dec:
     add cx, ax
     jc build_error
 
-    jmp com_dec
+    jmp num_dec
 
 com_one:
     inc si
@@ -1181,6 +1229,8 @@ ins_mov: db "mov"
 ins_int: db "int"
 ins_jmp: db "jmp"
 ins_cmp: db "cmp"
+ins_inc: db "inc"
+ins_dec: db "dec"
 
 flag_jb: db "jb"
 flag_jc: db "jc"
@@ -1218,6 +1268,8 @@ ins_table:
     dw ins_mov, com_mov, 3
     dw ins_int, com_int, 3
     dw ins_cmp, com_cmp, 3
+    dw ins_inc, com_inc, 3
+    dw ins_dec, com_dec, 3
 
 ins_end:
 
