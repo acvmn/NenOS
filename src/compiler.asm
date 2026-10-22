@@ -202,6 +202,9 @@ ins_compare:
 ins_loop:
     call skip_space
 
+    cmp byte [si], "j"
+    je com_flag
+
     cmp byte [si], 0
     je bin
 
@@ -749,7 +752,7 @@ com_cmp:
     inc dx
     jmp write_imm
 
-a_je:
+a_flag:
     mov di, jmps
     add di, [j_count]
 
@@ -764,17 +767,17 @@ a_je:
 
     add word [j_count], 6
     pop si
-    jmp skip_je
+    jmp skip_flag
 
-skip_je:
+skip_flag:
     lodsb
     cmp al, 13
-    je je_skipped
+    je flag_skipped
     cmp al, 0
-    je je_skipped
-    jmp skip_je
+    je flag_skipped
+    jmp skip_flag
 
-je_skipped:
+flag_skipped:
     mov cx, 0
     sub cx, 2
     mov bx, dx
@@ -786,41 +789,79 @@ je_skipped:
     je skip_comment
     jmp ins_compare
 
-je_ready:
-    add si, 2
+flag_ready:
     call skip_space
     push si
-    jmp je_label
+    jmp flag_label
 
-je_label:
+flag_label:
     lodsb
     cmp al, ";"
-    je a_je
+    je a_flag
     cmp al, " "
-    je a_je
+    je a_flag
     cmp al, 13
-    je a_je
+    je a_flag
     cmp al, 0
-    je a_je
+    je a_flag
     inc cx
-    jmp je_label
+    jmp flag_label
 
-com_je:
+com_flag:
+    mov di, flag_table
+    jmp flag_compare
+
+flag_compare:
+    cmp di, flag_end
+    jae flag_false
+
+    mov bx, [di]
+    mov cx, [di + 4]
+
+    push si
+    push di
+
+    mov di, bx
+    repe cmpsb
+
+    pop di
+    pop si
+
+    je flag_true
+
+    add di, 6
+    jmp flag_compare
+
+flag_false:
+    mov ax, 0
+    mov bx, 0
+    mov cx, 0
+    mov dx, 0
+    mov [first], ax
+    mov [second], ax
+    jmp build_error
+
+flag_true:
+    mov ax, [di + 2]
+    mov cx, [di + 4]
+    cmp ax, 0xe9
+    je com_jmp
+    add si, cx
     mov bx, dx
-    mov byte [bytes + bx], 0x74
+    mov byte [bytes + bx], al
     inc dx
-    cmp byte [si + 2], " "
+    cmp byte [si], " "
     jne build_error
 
-    add si, 4
+    add si, 2
     call skip_space
-    sub si, 4
+    sub si, 2
 
     mov cx, 0
-    cmp byte [si + 4], "0"
-    jl je_ready
-    cmp byte [si + 4], "9"
-    jg je_ready
+    cmp byte [si + 2], "0"
+    jl flag_ready
+    cmp byte [si + 2], "9"
+    jg flag_ready
 
     push dx
     call com_arg
@@ -1140,16 +1181,81 @@ ins_mov: db "mov"
 ins_int: db "int"
 ins_jmp: db "jmp"
 ins_cmp: db "cmp"
-ins_je: db "je"
+
+flag_jb: db "jb"
+flag_jc: db "jc"
+flag_jnae: db "jnae"
+flag_jae: db "jae"
+flag_jnb: db "jnb"
+flag_jnc: db "jnc"
+flag_jbe: db "jbe"
+flag_jna: db "jna"
+flag_ja: db "ja"
+flag_jnbe: db "jnbe"
+flag_jl: db "jl"
+flag_jnge: db "jnge"
+flag_jge: db "jge"
+flag_jnl: db "jnl"
+flag_jle: db "jle"
+flag_jng: db "jng"
+flag_jg: db "jg"
+flag_jnle: db "jnle"
+flag_je: db "je"
+flag_jz: db "jz"
+flag_jne: db "jne"
+flag_jnz: db "jnz"
+flag_js: db "js"
+flag_jns: db "jns"
+flag_jo: db "jo"
+flag_jno: db "jno"
+flag_jp: db "jp"
+flag_jpe: db "jpe"
+flag_jnp: db "jnp"
+flag_jpo: db "jpo"
+flag_jcxz: db "jcxz"
 
 ins_table:
     dw ins_mov, com_mov, 3
     dw ins_int, com_int, 3
-    dw ins_jmp, com_jmp, 3
     dw ins_cmp, com_cmp, 3
-    dw ins_je, com_je, 2
 
 ins_end:
+
+flag_table:
+    dw ins_jmp, 0xe9, 3
+    dw flag_jb, 0x72, 2
+    dw flag_jc, 0x72, 2
+    dw flag_jnae, 0x72, 4
+    dw flag_jae, 0x73, 3
+    dw flag_jnb, 0x73, 3
+    dw flag_jnc, 0x73, 3
+    dw flag_jbe, 0x76, 3
+    dw flag_jna, 0x76, 3
+    dw flag_ja, 0x77, 2
+    dw flag_jnbe, 0x77, 4
+    dw flag_jl, 0x7c, 2
+    dw flag_jnge, 0x7c, 4
+    dw flag_jge, 0x7d, 3
+    dw flag_jnl, 0x7d, 3
+    dw flag_jle, 0x7e, 3
+    dw flag_jng, 0x7e, 3
+    dw flag_jg, 0x7f, 2
+    dw flag_jnle, 0x7f, 4
+    dw flag_je, 0x74, 2
+    dw flag_jz, 0x74, 2
+    dw flag_jne, 0x75, 3
+    dw flag_jnz, 0x75, 3
+    dw flag_js, 0x78, 2
+    dw flag_jns, 0x79, 3
+    dw flag_jo, 0x70, 2
+    dw flag_jno, 0x71, 3
+    dw flag_jp, 0x7a, 2
+    dw flag_jpe, 0x7a, 3
+    dw flag_jnp, 0x7b, 3
+    dw flag_jpo, 0x7b, 3
+    dw flag_jcxz, 0xe3, 4
+
+flag_end:
 
 syntax: db "Syntax error: ", 0
 
