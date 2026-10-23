@@ -1,8 +1,6 @@
 org 0x7e00
 
 start:
-    call stack
-
     mov ax, 0x1110
     mov bh, 16
     mov bl, 0
@@ -282,11 +280,11 @@ first_space:
     cmp al, " "
     je first_space
 
-    jmp calc_error
+    jmp done
 
 action_add:
     cmp cl, 0
-    je calc_error
+    je done
     mov dl, 0
     mov ah, 0
     mov cl, al
@@ -295,7 +293,7 @@ action_add:
 
 action_sub: 
     cmp cl, 0
-    je calc_error
+    je done
     mov dl, 0
     mov ah, 0
     mov cl, al
@@ -304,7 +302,7 @@ action_sub:
 
 action_mul:
     cmp cl, 0
-    je calc_error
+    je done
     mov dl, 0
     mov ah, 0
     mov cl, al
@@ -313,7 +311,7 @@ action_mul:
 
 action_div:
     cmp cl, 0
-    je calc_error
+    je done
     mov dl, 0
     mov ah, 0
     mov cl, al
@@ -335,7 +333,7 @@ calc_second:
     mov bx, 10
     mul bx
     cmp dx, 0
-    jne calc_error
+    jne done
     mov [second], ax
 
     lodsb
@@ -343,13 +341,13 @@ calc_second:
     mov dl, al
 
     cmp al, "0"
-    jl calc_error
+    jl done
     cmp al, "9"
-    jg calc_error
+    jg done
     sub al, "0"
     mov ah, 0
     add [second], ax
-    jc calc_error
+    jc done
 
     jmp calc_second
 
@@ -374,7 +372,7 @@ calc_first:
     mov bx, 10
     mul bx
     cmp dx, 0
-    jne calc_error
+    jne done
     mov [first], ax
 
     lodsb
@@ -382,13 +380,13 @@ calc_first:
     mov cl, al
 
     cmp al, "0"
-    jl calc_error
+    jl done
     cmp al, "9"
-    jg calc_error
+    jg done
     sub al, "0"
     mov ah, 0
     add [first], ax
-    jc calc_error
+    jc done
 
     jmp calc_first
 
@@ -463,8 +461,10 @@ calc:
 
     call skip_space
 
-    cmp dl, 0
-    je calc_error
+    cmp dl, "0"
+    jl calc_error
+    cmp dl, "9"
+    jg calc_error
 
     cmp cl, "+"
     je calc_add
@@ -518,6 +518,8 @@ copy:
     call skip_space
     mov cl, 0
     call argc_file
+    test cl, cl
+    je return
     mov [src], cl
 
     call to_space
@@ -527,6 +529,8 @@ copy:
     je calc_error
     mov cl, 0
     call argc_file
+    test cl, cl
+    je return
     mov [dst], cl
 
     mov dx, 0
@@ -876,6 +880,8 @@ run:
     call skip_space
     mov cl, 0
     call argc_file
+    test cl, cl
+    je return
 
     call skip_space
 
@@ -994,6 +1000,8 @@ write:
     call skip_space
     mov cl, 0
     call argc_file
+    test cl, cl
+    je return
     mov ch, 0
     push cx
 
@@ -1253,6 +1261,8 @@ read:
     call skip_space
     mov cl, 0
     call argc_file
+    test cl, cl
+    je return
 
     mov dx, 0
     mov [0x9e00], dx
@@ -1304,6 +1314,7 @@ search_file:
 search_end:
     cmp ah, 0
     je search_match
+    jmp not_search
 
 not_search:
     pop si
@@ -1317,20 +1328,15 @@ search_next:
     jmp search_fail
 
 search_match:
+    cmp byte [bx + 1], 0
     pop si
     pop bx
+    jne search_fail
     mov al, [bx + 15]
     mov ah, 1
     xchg al, ah
     mov cl, ah
     ret
-
-search_fail:
-    pop ax
-    xor ax, ax
-    mov si, not_found
-    call print
-    jmp return
 
 search_loop:
     mov al, [si]
@@ -1350,23 +1356,19 @@ search_loop:
     jnz search_loop
     jmp search_match
 
-stack:
-    pop bx
-    mov di, 0x7c00
-    sub di, 512
-    mov cx, 512
-    xor al, al
-    rep stosb
-    mov sp, 0x7c00
-    jmp bx
+search_fail:
+    mov si, not_found
+    call print
+    xor cl, cl
+    ret
 
 return:
-    call stack
-
     mov ax, 0
     mov bx, 0
     mov cx, 0
     mov dx, 0
+    mov [first], ax
+    mov [second], ax
 
     mov si, console
     call print

@@ -110,7 +110,7 @@ is_comment:
     cmp ah, 0xff
     je skip_label
     cmp al, ";"
-    jne build_error
+    jne done
     mov ah, 0xff
     jmp skip_label
 
@@ -126,7 +126,7 @@ skip_label:
 
 ready_label:
     push si
-    jmp is_label
+    jmp check_label
 
 is_label:
     lodsb
@@ -145,10 +145,10 @@ is_label:
 
 check_label:
     cmp byte [si], "0"
-    jb a_label
+    jb is_label
     cmp byte [si], "9"
-    ja a_label
-    jmp build_error
+    ja is_label
+    jmp done
 
 a_label:
     mov di, labels
@@ -245,7 +245,7 @@ ins_false:
     mov dx, 0
     mov [first], ax
     mov [second], ax
-    jmp build_error
+    jmp done
 
 resolve_jmps:
     xor bp, bp
@@ -267,7 +267,7 @@ next_jmp:
 
 next_label:
     cmp bx, [l_count]
-    jae build_error
+    jae done
 
     mov ax, [di + 4]
     cmp ax, cx
@@ -364,7 +364,7 @@ dup_found:
     pop cx
     pop di
     pop si
-    jmp build_error
+    jmp done
 
 dup_diff:
     pop cx
@@ -458,7 +458,7 @@ sec_true:
     pop cx
     mov ax, [di + 6]
     cmp al, ch
-    jne build_error
+    jne done
 
     add si, 2
     mov bx, [di + 2]
@@ -839,7 +839,7 @@ flag_false:
     mov dx, 0
     mov [first], ax
     mov [second], ax
-    jmp build_error
+    jmp done
 
 flag_true:
     mov ax, [di + 2]
@@ -851,7 +851,7 @@ flag_true:
     mov byte [bytes + bx], al
     inc dx
     cmp byte [si], " "
-    jne build_error
+    jne done
 
     add si, 2
     call skip_space
@@ -867,7 +867,7 @@ flag_true:
     call com_arg
     pop dx
     cmp bh, "x"
-    je build_error
+    je done
     sub cx, 0x9e00
     sub cx, dx
     sub cx, 2
@@ -957,7 +957,7 @@ num_bit:
     cmp byte [com_bit], 2
     je num_16
     cmp ch, 0
-    jne build_error
+    jne done
     ret
 
 num_16:
@@ -1043,7 +1043,7 @@ reg_true:
 
 reg_false:
     cmp dl, 0
-    je build_error
+    je done
 
     mov ax, 0
     mov bx, 0
@@ -1052,7 +1052,7 @@ reg_false:
     mov [first], ax
     mov [second], ax
 
-    jmp build_error
+    jmp done
 
 com_arg:
     mov ax, 0
@@ -1061,9 +1061,9 @@ com_arg:
     call skip_space
 
     cmp byte [si], 13
-    je build_error
+    je done
     cmp byte [si], 0
-    je build_error
+    je done
     cmp byte [si], "'"
     je com_one
     cmp byte [si], '"'
@@ -1075,20 +1075,20 @@ com_arg:
     cmp byte [si + 1], 0
     je num_dec
     cmp byte [si + 1], "x"
-    jne build_error
+    jne done
 
     add si, 2
     jmp com_hex
 
 check_hex:
     cmp bl, "0"
-    jb build_error
+    jb done
     cmp bl, "9"
     jbe done
     cmp bl, "a"
-    jb build_error
+    jb done
     cmp bl, "f"
-    ja build_error
+    ja done
     ret
 
 com_hex:
@@ -1119,9 +1119,9 @@ com_hex:
     mov cx, 16
     mul cx
     cmp dx, 0
-    jne build_error
+    jne done
     add ax, bx
-    jc build_error
+    jc done
     jmp com_hex
 
 is_dec:
@@ -1130,9 +1130,9 @@ is_dec:
     mov cx, 16
     mul cx
     cmp dx, 0
-    jne build_error
+    jne done
     add ax, bx
-    jc build_error
+    jc done
     jmp com_hex
 
 num_dec:
@@ -1154,19 +1154,19 @@ num_dec:
     mov bx, 10
     mul bx
     cmp dx, 0
-    jne build_error
+    jne done
     mov cx, ax
 
     lodsb
 
     cmp al, "0"
-    jl build_error
+    jl done
     cmp al, "9"
-    jg build_error
+    jg done
     sub al, "0"
     mov ah, 0
     add cx, ax
-    jc build_error
+    jc done
 
     jmp num_dec
 
@@ -1175,7 +1175,7 @@ com_one:
     mov cl, [si]
     inc si
     cmp byte [si], "'"
-    jne build_error
+    jne done
     add si, 2
     ret
     
@@ -1184,7 +1184,7 @@ com_two:
     mov cl, [si]
     inc si
     cmp byte [si], '"'
-    jne build_error
+    jne done
     add si, 2
     ret
 
