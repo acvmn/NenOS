@@ -24,10 +24,6 @@ build:
     mov si, 0x9e00
 
     call normal
-    mov di, labels
-    call clear_buff
-    mov di, jmps
-    call clear_buff
 
     mov word [l_count], 0
     mov word [j_count], 0
@@ -99,13 +95,6 @@ normal_next:
     pop si
     ret
 
-clear_buff:
-    cmp word [di], 0
-    je done
-    mov word [di], 0
-    inc di
-    jmp clear_buff
-
 is_comment:
     cmp ah, 0xff
     je skip_label
@@ -173,7 +162,6 @@ a_label:
 
 not_label:
     pop si
-    pop ax
     jmp ins_loop
 
 label_done:
@@ -245,7 +233,7 @@ ins_false:
     mov dx, 0
     mov [first], ax
     mov [second], ax
-    jmp done
+    jmp build_error
 
 resolve_jmps:
     xor bp, bp
