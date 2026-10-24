@@ -1369,10 +1369,6 @@ search_fail:
     jmp done
 
 return:
-    mov ax, sp
-    mov dx, 0
-    call number
-
     mov ax, 0
     mov bx, 0
     mov cx, 0

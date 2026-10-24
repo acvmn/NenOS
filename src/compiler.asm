@@ -128,32 +128,33 @@ ready_label:
     push si
     jmp check_label
 
+valid:
+    inc cx
+    jmp is_label
+
 is_label:
     lodsb
-    inc cx
-
     cmp al, 0
     je not_label
     cmp al, 13
     je not_label
-    cmp al, "_"
-    je is_label
-    cmp al, "0"
-    jb not_label
-    cmp al, "9"
-    jbe is_label
-    cmp al, "A"
-    jb not_label
-    cmp al, "Z"
-    jbe is_label
-    cmp al, "a"
-    jb not_label
-    cmp al, "z"
-    jbe is_label
-    cmp al, ":"
-    jb a_label
+    cmp al, " "
+    je not_label
 
-    jmp is_label
+    cmp al, ":"
+    je a_label
+
+    cmp al, "_"
+    je valid
+    cmp al, "0"
+    jb a_error
+    cmp al, "9"
+    jbe valid
+    cmp al, "a"
+    jb a_error
+    cmp al, "z"
+    jbe valid
+    jmp a_error
 
 check_label:
     cmp byte [si], "0"
@@ -169,7 +170,6 @@ call_done:
     ret
 
 a_label:
-    dec cx
     mov di, labels
     add di, [l_count]
 
