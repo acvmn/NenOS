@@ -269,10 +269,8 @@ next_jmp:
     jmp next_label
 
 next_label:
-    stc
     cmp bx, [l_count]
-    jae done
-    clc
+    jae call_done
 
     mov ax, [di + 4]
     cmp ax, cx
@@ -972,9 +970,8 @@ scd_16:
 num_bit:
     cmp byte [com_bit], 2
     je num_16
-    stc
     cmp ch, 0
-    jne done
+    jne call_done
     clc
     ret
 
@@ -982,6 +979,7 @@ num_16:
     mov bx, dx
     mov byte [bytes + bx], al
     inc dx
+    clc
     ret
 
 com_inc:
