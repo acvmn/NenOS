@@ -1119,6 +1119,7 @@ check_hex:
     jb call_done
     cmp bl, "f"
     ja call_done
+    clc
     ret
 
 is_hex:

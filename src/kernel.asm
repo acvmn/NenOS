@@ -1,6 +1,8 @@
 org 0x7e00
 
 start:
+    mov sp, 0x7c00
+
     mov ax, 0x1110
     mov bh, 16
     mov bl, 0
