@@ -901,7 +901,7 @@ flag_true:
 op_ax:
     mov bx, dx
     mov byte [bytes + bx], 0x3d
-    inc cx
+    inc dx
     jmp write_imm
 
 not_al:
@@ -1060,9 +1060,8 @@ reg_true:
     ret
 
 reg_false:
-    stc
     cmp dl, 0
-    je done
+    je call_done
 
     mov ax, 0
     mov bx, 0
@@ -1071,7 +1070,7 @@ reg_false:
     mov [first], ax
     mov [second], ax
 
-    jmp done
+    jmp call_done
 
 com_arg:
     mov ax, 0
@@ -1079,12 +1078,10 @@ com_arg:
     add si, 3
     call skip_space
 
-    stc
     cmp byte [si], 13
-    je done
+    je call_done
     cmp byte [si], 0
-    je done
-    clc
+    je call_done
     cmp byte [si], "'"
     je com_one
     cmp byte [si], '"'
@@ -1104,18 +1101,14 @@ com_arg:
     jmp com_hex
 
 check_hex:
-    stc
     cmp bl, "0"
-    jb done
-    clc
+    jb call_done
     cmp bl, "9"
     jbe done
-    stc
     cmp bl, "a"
-    jb done
+    jb call_done
     cmp bl, "f"
-    ja done
-    clc
+    ja call_done
     ret
 
 com_hex:
@@ -1129,13 +1122,13 @@ com_hex:
     mov cx, ax
 
     cmp bl, 0
-    je done
+    je call_done
     cmp bl, 13
-    je done
+    je call_done
     cmp bl, " "
-    je done
+    je call_done
     cmp bl, ";"
-    je done
+    je call_done
 
     mov bh, 0
     call check_hex
@@ -1185,20 +1178,16 @@ num_dec:
     mov ax, cx
     mov bx, 10
     mul bx
-    stc
     cmp dx, 0
-    jne done
-    clc
+    jne call_done
     mov cx, ax
 
     lodsb
 
-    stc
     cmp al, "0"
-    jl done
+    jl call_done
     cmp al, "9"
-    jg done
-    clc
+    jg call_done
     sub al, "0"
     mov ah, 0
     add cx, ax
