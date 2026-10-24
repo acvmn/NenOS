@@ -2,6 +2,8 @@ build:
     call skip_space
     mov cl, 0
     call argc_file
+    test cl, cl
+    je return
     mov [src], cl
 
     call to_space
@@ -11,6 +13,8 @@ build:
     je calc_error
     mov cl, 0
     call argc_file
+    test cl, cl
+    je return
     mov [dst], cl
 
     mov ah, 0x02
@@ -126,17 +130,29 @@ ready_label:
 
 is_label:
     lodsb
-
-    cmp al, 13
-    je label_done
-    cmp al, 0
-    je label_done
-    cmp al, ":"
-    je a_label
-    cmp al, " "
-    je not_label
-
     inc cx
+
+    cmp al, 0
+    je not_label
+    cmp al, 13
+    je not_label
+    cmp al, "_"
+    je is_label
+    cmp al, "0"
+    jb not_label
+    cmp al, "9"
+    jbe is_label
+    cmp al, "A"
+    jb not_label
+    cmp al, "Z"
+    jbe is_label
+    cmp al, "a"
+    jb not_label
+    cmp al, "z"
+    jbe is_label
+    cmp al, ":"
+    jb a_label
+
     jmp is_label
 
 check_label:
@@ -153,6 +169,7 @@ call_done:
     ret
 
 a_label:
+    dec cx
     mov di, labels
     add di, [l_count]
 
@@ -182,10 +199,6 @@ a_error:
 not_label:
     pop si
     clc
-    ret
-
-label_done:
-    pop si
     ret
 
 is_next:
@@ -276,7 +289,7 @@ next_jmp:
 
 next_label:
     cmp bx, [l_count]
-    jae call_done
+    jae done
 
     mov ax, [di + 4]
     cmp ax, cx
@@ -428,7 +441,7 @@ error_next:
 error_done:
     inc cx
     push cx
-    mov si, syntax
+    mov si, error_line
     call print
     pop ax
     mov dx, 0
@@ -1355,11 +1368,11 @@ flag_table:
 
 flag_end:
 
-syntax: db "Syntax error: ", 0
+error_line: db "Error line: ", 0
 
 com_bit: db 0
-labels: times 3 * 512 dw 0
+labels: times 3 * 16 dw 0
 l_count: dw 0
-jmps: times 3 * 512 dw 0
+jmps: times 3 * 16 dw 0
 j_count: dw 0
 bytes: times 512 db 0

@@ -1366,7 +1366,7 @@ search_fail:
     mov si, not_found
     call print
     xor cl, cl
-    ret
+    jmp done
 
 return:
     mov ax, sp
