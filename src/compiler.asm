@@ -1092,10 +1092,8 @@ com_arg:
     je num_dec
     cmp byte [si + 1], 0
     je num_dec
-    stc
     cmp byte [si + 1], "x"
-    jne done
-    clc
+    jne call_done
 
     add si, 2
     jmp com_hex
@@ -1122,13 +1120,13 @@ com_hex:
     mov cx, ax
 
     cmp bl, 0
-    je call_done
+    je done
     cmp bl, 13
-    je call_done
+    je done
     cmp bl, " "
-    je call_done
+    je done
     cmp bl, ";"
-    je call_done
+    je done
 
     mov bh, 0
     call check_hex
@@ -1139,10 +1137,8 @@ com_hex:
     mov dx, 0
     mov cx, 16
     mul cx
-    stc
     cmp dx, 0
-    jne done
-    clc
+    jne call_done
     add ax, bx
     jc call_done
     jmp com_hex
