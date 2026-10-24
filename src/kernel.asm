@@ -633,6 +633,7 @@ file_empty:
     jnz file_empty
     mov si, full
     call print
+    pop si
     jmp return
 
 create_exists:
@@ -748,6 +749,7 @@ delete_found:
     mov al, [bx + 15]
     mov [del_sector], al
     mov cx, 16
+    pop si
     jne delete_delete
 
 delete_delete:
@@ -855,6 +857,7 @@ dir_next:
     add si, 16
     dec cx
     jnz dir_loop
+    pop si
     jmp return
 
 help:
@@ -908,6 +911,7 @@ run:
     xor bp, bp
     xor sp, sp
     call 0x9e00
+    mov sp, 0x7c00
 
     mov si, enter
     call print
@@ -1363,6 +1367,10 @@ search_fail:
     ret
 
 return:
+    mov ax, sp
+    mov dx, 0
+    call number
+
     mov ax, 0
     mov bx, 0
     mov cx, 0

@@ -144,8 +144,9 @@ check_label:
     jb is_label
     cmp byte [si], "9"
     ja is_label
+    pop si
     stc
-    jmp done
+    ret
 
 call_done:
     stc
@@ -156,7 +157,7 @@ a_label:
     add di, [l_count]
 
     call check_dup
-    jc call_done
+    jc a_error
 
     sub si, cx
     dec si
@@ -173,10 +174,15 @@ a_label:
     inc si
     jmp skip_label
 
+a_error:
+    pop si
+    stc
+    ret
+
 not_label:
     pop si
-    pop ax
-    jmp ins_loop
+    clc
+    ret
 
 label_done:
     pop si
@@ -386,6 +392,10 @@ bin:
     mov byte [bytes + bx], 0xc3
     inc dx
 
+    mov bx, dx
+    mov byte [bytes + bx], 0x00
+    inc dx
+
     xor bp, bp
     call resolve_jmps
     jc build_error
@@ -547,8 +557,6 @@ com_mov:
     call com_arg
     pop dx
     jc build_error
-    cmp bh, "x"
-    je build_error
     mov bx, dx
     mov byte [bytes + bx], cl
     inc dx
@@ -576,9 +584,9 @@ com_int:
     push dx
     call com_arg
     pop dx
+    cmp ch, 0
+    jne build_error
     jc build_error
-    cmp bh, "x"
-    je build_error
     cmp ch, 0
     jne build_error
     mov bx, dx
@@ -672,8 +680,6 @@ com_jmp:
     call com_arg
     pop dx
     jc build_error
-    cmp bh, "x"
-    je build_error
     sub cx, 0x9e00
     sub cx, dx
     sub cx, 2
@@ -880,8 +886,6 @@ flag_true:
     call com_arg
     pop dx
     jc build_error
-    cmp bh, "x"
-    je build_error
     sub cx, 0x9e00
     sub cx, dx
     sub cx, 2
@@ -928,11 +932,19 @@ op_other:
     jmp write_imm
 
 write_imm:
+    cmp byte [com_bit], 1
+    jne is_16
     mov bx, dx
     mov [bytes + bx], cl
     inc dx
-    cmp byte [com_bit], 1
-    je cmp_done
+    cmp ch, 0
+    jne build_error
+    jmp cmp_done
+
+is_16:
+    mov bx, dx
+    mov [bytes + bx], cl
+    inc dx
     mov bx, dx
     mov [bytes + bx], ch
     inc dx
@@ -1102,11 +1114,15 @@ check_hex:
     cmp bl, "0"
     jb call_done
     cmp bl, "9"
-    jbe done
+    jbe is_hex
     cmp bl, "a"
     jb call_done
     cmp bl, "f"
     ja call_done
+    ret
+
+is_hex:
+    clc
     ret
 
 com_hex:
@@ -1120,13 +1136,13 @@ com_hex:
     mov cx, ax
 
     cmp bl, 0
-    je done
+    je end_hex
     cmp bl, 13
-    je done
+    je end_hex
     cmp bl, " "
-    je done
+    je end_hex
     cmp bl, ";"
-    je done
+    je end_hex
 
     mov bh, 0
     call check_hex
@@ -1148,13 +1164,17 @@ is_dec:
     sub bl, "0"
     mov cx, 16
     mul cx
-    stc
     cmp dx, 0
-    jne done
-    clc
+    jne call_done
     add ax, bx
     jc call_done
     jmp com_hex
+
+end_hex:
+    cmp byte [si - 2], "x"
+    je call_done
+    clc
+    ret
 
 num_dec:
     lodsb
