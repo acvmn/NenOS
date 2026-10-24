@@ -515,7 +515,6 @@ mov_reg:
     mov bx, dx
     mov byte [bytes + bx], 0x88
     call reg_16
-    jc build_error
     inc dx
     pop bx
 
