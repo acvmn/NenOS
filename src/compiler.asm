@@ -422,62 +422,6 @@ bin:
     mov dh, 0
     int 0x13
 
-    mov al, [bytes + 0]
-    mov ah, 0
-    mov dx, 0
-    call number
-    mov al, " "
-    mov ah, 0x0e
-    int 0x10
-
-    mov al, [bytes + 1]
-    mov ah, 0
-    mov dx, 0
-    call number
-    mov al, " "
-    mov ah, 0x0e
-    int 0x10
-
-    mov al, [bytes + 2]
-    mov ah, 0
-    mov dx, 0
-    call number
-    mov al, " "
-    mov ah, 0x0e
-    int 0x10
-
-    mov al, [bytes + 3]
-    mov ah, 0
-    mov dx, 0
-    call number
-    mov al, " "
-    mov ah, 0x0e
-    int 0x10
-
-    mov al, [bytes + 4]
-    mov ah, 0
-    mov dx, 0
-    call number
-    mov al, " "
-    mov ah, 0x0e
-    int 0x10
-
-    mov al, [bytes + 5]
-    mov ah, 0
-    mov dx, 0
-    call number
-    mov al, " "
-    mov ah, 0x0e
-    int 0x10
-
-    mov al, [bytes + 6]
-    mov ah, 0
-    mov dx, 0
-    call number
-    mov al, " "
-    mov ah, 0x0e
-    int 0x10
-
     jmp return
 
 error_count:
@@ -1159,11 +1103,14 @@ not_al:
     jmp write_imm
 
 op_other:
+    push bx
     mov bx, dx
     mov byte [bytes + bx], 0x81
     inc dx
     mov al, 0xf8
+    pop bx
     or al, bl
+    mov bx, dx
     mov [bytes + bx], al
     inc dx
     jmp write_imm
