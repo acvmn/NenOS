@@ -187,7 +187,7 @@ a_label:
     pop si
     add si, cx
     inc si
-    jmp skip_label
+    jmp done
 
 a_error:
     pop si
@@ -452,7 +452,13 @@ sec_reg:
     push cx
     add si, 4
     mov di, reg_table
-    jmp sec_compare
+    cmp byte [si + 4], "0"
+    jl sec_compare
+    cmp byte [si + 4], "9"
+    jg sec_compare
+    pop cx
+    mov ah, 0
+    ret
 
 sec_compare:
     cmp di, reg_end
@@ -492,6 +498,7 @@ sec_false:
     sub si, 4
     pop cx
     mov al, 0
+    mov ah, 1
     ret
 
 reg_16:
@@ -733,6 +740,8 @@ com_mov:
     jc build_error
     cmp al, 1
     je mov_reg
+    cmp ah, 1
+    je jmp_ready
 
     push dx
     call com_arg
@@ -904,6 +913,64 @@ op:
     mov di, ins_table
     call skip_space
     inc si
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
+op_ax:
+    mov bx, dx
+    mov byte [bytes + bx], 0x3d
+    inc dx
+    jmp write_imm
+
+not_al:
+    cmp bh, 2
+    je op_other
+    mov bx, dx
+    mov byte [bytes + bx], 0x80
+    inc dx
+    mov al, 0xf8
+    or al, bl
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+    jmp write_imm
+
+op_other:
+    push bx
+    mov bx, dx
+    mov byte [bytes + bx], 0x81
+    inc dx
+    mov al, 0xf8
+    pop bx
+    or al, bl
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+    jmp write_imm
+
+write_imm:
+    cmp byte [com_bit], 1
+    jne is_16
+    mov bx, dx
+    mov [bytes + bx], cl
+    inc dx
+    cmp ch, 0
+    jne build_error
+    jmp cmp_done
+
+is_16:
+    mov bx, dx
+    mov [bytes + bx], cl
+    inc dx
+    mov bx, dx
+    mov [bytes + bx], ch
+    inc dx
+    jmp cmp_done
+
+cmp_done:
+    mov di, ins_table
+    call skip_space
     cmp byte [si - 1], ";"
     je skip_comment
     jmp ins_compare
@@ -1083,64 +1150,6 @@ flag_true:
     je skip_comment
     jmp ins_compare
 
-op_ax:
-    mov bx, dx
-    mov byte [bytes + bx], 0x3d
-    inc dx
-    jmp write_imm
-
-not_al:
-    cmp bh, 2
-    je op_other
-    mov bx, dx
-    mov byte [bytes + bx], 0x80
-    inc dx
-    mov al, 0xf8
-    or al, bl
-    mov bx, dx
-    mov [bytes + bx], al
-    inc dx
-    jmp write_imm
-
-op_other:
-    push bx
-    mov bx, dx
-    mov byte [bytes + bx], 0x81
-    inc dx
-    mov al, 0xf8
-    pop bx
-    or al, bl
-    mov bx, dx
-    mov [bytes + bx], al
-    inc dx
-    jmp write_imm
-
-write_imm:
-    cmp byte [com_bit], 1
-    jne is_16
-    mov bx, dx
-    mov [bytes + bx], cl
-    inc dx
-    cmp ch, 0
-    jne build_error
-    jmp cmp_done
-
-is_16:
-    mov bx, dx
-    mov [bytes + bx], cl
-    inc dx
-    mov bx, dx
-    mov [bytes + bx], ch
-    inc dx
-    jmp cmp_done
-
-cmp_done:
-    mov di, ins_table
-    call skip_space
-    cmp byte [si - 1], ";"
-    je skip_comment
-    jmp ins_compare
-
 fst_bit:
     cmp ch, 2
     je fst_16
@@ -1220,6 +1229,111 @@ com_dec:
     add byte [bytes + bx], cl
     inc dx
 
+    mov di, ins_table
+    call skip_space
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
+com_db:
+    add si, 2
+    call skip_space
+    jmp db_loop
+
+db_loop:
+    cmp byte [si], '"'
+    je string_mode
+    cmp byte [si], "'"
+    je char_mode
+
+    mov al, [si]
+    mov ah, 0x0e
+
+    push dx
+    sub si, 3
+    call com_arg
+    pop dx
+    jc build_error
+
+    mov bx, dx
+    mov [bytes + bx], cl
+    inc dx
+    jmp check_comma
+
+char_mode:
+    inc si
+    jmp char_loop
+
+char_loop:
+    lodsb
+    cmp al, "'"
+    je check_comma
+    cmp al, 0
+    je build_error
+
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+    jmp char_loop
+
+string_mode:
+    inc si
+    jmp str_loop
+
+str_loop:
+    lodsb
+    cmp al, '"'
+    je check_comma
+    cmp al, 0
+    je build_error
+
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+    jmp str_loop
+
+check_comma:
+    call skip_space
+    cmp byte [si], ","
+    jne db_done
+    inc si
+    call skip_space
+    jmp db_loop
+
+db_done:
+    mov di, ins_table
+    call skip_space
+    cmp byte [si - 1], ";"
+    je skip_comment
+    jmp ins_compare
+
+com_dw:
+    add si, 2
+    call skip_space
+    jmp dw_loop
+
+dw_loop:
+    push dx
+    sub si, 3
+    call com_arg
+    pop dx
+    jc build_error
+
+    mov bx, dx
+    mov [bytes + bx], cl
+    inc dx
+    mov bx, dx
+    mov [bytes + bx], ch
+    inc dx
+
+    call skip_space
+    cmp byte [si], ","
+    jne dw_done
+    inc si
+    call skip_space
+    jmp dw_loop
+
+dw_done:
     mov di, ins_table
     call skip_space
     cmp byte [si - 1], ";"
@@ -1463,6 +1577,8 @@ ins_jmp: db "jmp"
 ins_cmp: db "cmp"
 ins_inc: db "inc"
 ins_dec: db "dec"
+ins_db: db "db"
+ins_dw: db "dw"
 
 flag_jb: db "jb"
 flag_jc: db "jc"
@@ -1502,6 +1618,8 @@ ins_table:
     dw ins_cmp, com_cmp, 3
     dw ins_inc, com_inc, 3
     dw ins_dec, com_dec, 3
+    dw ins_db, com_db, 2
+    dw ins_dw, com_dw, 2
 
 ins_end:
 
