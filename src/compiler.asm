@@ -488,14 +488,13 @@ sec_compare:
 
 sec_true:
     pop cx
-    mov ax, [di + 6]
-    cmp al, ch
     add si, 2
     mov bx, [di + 2]
     mov ax, [di + 6]
     mov bh, al
     mov al, 1
     mov ah, 0
+    cmp ch, bh
     jne call_done
     ret
 
