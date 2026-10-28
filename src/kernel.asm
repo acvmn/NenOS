@@ -1383,7 +1383,8 @@ return:
     mov di, command
     jmp input
 
-%include "../src/compiler.asm"
+command: times 256 db 0
+document: times 512 db 0
 
 welcome: db "Welcome to NenOS!", 13, "Type <help> to show available commands.", 13, "Press <TAB> to change language.", 13, 0
 console: db "NenOS> ", 0
@@ -1438,6 +1439,8 @@ cmd_table:
 
 cmd_end:
 
+%include "../src/compiler.asm"
+
 lower:
     times 0x10 db 0
     db 0xa9, 0xe6, 0xe3, 0xaa, 0xa5, 0xad, 0xa3, 0xe8, 0xe9, 0xa7, 0xe5, 0xeA, 0, 0, 0xe4, 0xeb
@@ -1451,9 +1454,6 @@ upper:
     db 0x82, 0x80, 0x8f, 0x90, 0x8e, 0x8b, 0x84, 0x86, 0x9d, 0xf0, 0, 0, 0x9f, 0x97, 0x91, 0x8c
     db 0x88, 0x92, 0x9c, 0x81, 0x9e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     times 0xc0 db 0
-    
-command: times 256 db 0
-document: times 512 db 0
 
 times 16384-($-$$) db 0
 

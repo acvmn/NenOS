@@ -323,20 +323,31 @@ diff:
     add bx, 6
     jmp next_label
 
+is_jmp:
+    sub ax, dx
+    cmp bx, 0xe9
+    je jmp_long
+    sub ax, 1
+    mov bx, dx
+    mov [bytes + bx], al
+    jmp match_next
+
 match:
     pop cx
     pop di
     pop si
     mov ax, [di + 2]
-    sub ax, dx
     mov bx, dx
     dec bx
     mov bl, [bytes + bx]
-    cmp bl, 0xe9
-    je jmp_long
-    sub ax, 1
+    cmp bl, 0xb8
+    jb is_jmp
+    cmp bl, 0xbf
+    ja is_jmp
+    add ax, 0x9e00
     mov bx, dx
     mov [bytes + bx], al
+    mov [bytes + bx + 1], ah
     jmp match_next
 
 match_next:
@@ -1371,6 +1382,41 @@ reg_false:
 
     jmp call_done
 
+arg_label:
+    mov bx, si
+    xor cx, cx
+    jmp arg_len
+
+arg_len:
+    cmp byte [bx], 0
+    je len_done
+    cmp byte [bx], 13
+    je len_done
+    cmp byte [bx], " "
+    je len_done
+    cmp byte [bx], ";"
+    je len_done
+    inc bx
+    inc cx
+    jmp arg_len
+
+len_done:
+    mov di, jmps
+    add di, [j_count]
+
+    mov ax, si
+    stosw
+    mov ax, dx
+    stosw
+    mov ax, cx
+    stosw
+
+    add word [j_count], 6
+    add si, cx
+    mov cx, 0x9e00
+    clc
+    ret
+
 com_arg:
     mov ax, 0
     mov cx, 0
@@ -1385,6 +1431,10 @@ com_arg:
     je com_one
     cmp byte [si], '"'
     je com_two
+    cmp byte [si], "0"
+    jl arg_label
+    cmp byte [si], "9"
+    jg arg_label
     cmp byte [si + 1], "x"
     jne num_dec
     cmp byte [si + 1], 13
@@ -1650,11 +1700,10 @@ flag_table:
 
 flag_end:
 
-error_line: db "Error line: ", 0
-
 com_bit: db 0
 labels: times 3 * 16 dw 0
 l_count: dw 0
 jmps: times 3 * 16 dw 0
 j_count: dw 0
+error_line: db "Error line: ", 0
 bytes: times 512 db 0
