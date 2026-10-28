@@ -70,7 +70,6 @@ done:
 ```
 ```
 mov si, text
-jmp print
 
 print:
     mov al, [si]
