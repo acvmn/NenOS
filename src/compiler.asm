@@ -287,7 +287,7 @@ next_jmp:
 
 next_label:
     cmp bx, [l_count]
-    jae done
+    jae call_done
 
     mov ax, [di + 4]
     cmp ax, cx
@@ -452,13 +452,7 @@ sec_reg:
     push cx
     add si, 4
     mov di, reg_table
-    cmp byte [si + 4], "0"
-    jl sec_compare
-    cmp byte [si + 4], "9"
-    jg sec_compare
-    pop cx
-    mov ah, 0
-    ret
+    jmp sec_compare
 
 sec_compare:
     cmp di, reg_end
@@ -498,7 +492,6 @@ sec_false:
     sub si, 4
     pop cx
     mov al, 0
-    mov ah, 1
     ret
 
 reg_16:
@@ -740,8 +733,6 @@ com_mov:
     jc build_error
     cmp al, 1
     je mov_reg
-    cmp ah, 1
-    je jmp_ready
 
     push dx
     call com_arg
