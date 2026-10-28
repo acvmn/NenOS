@@ -461,7 +461,6 @@ error_done:
 
 sec_reg:
     push cx
-    add si, 4
     mov di, reg_table
     jmp sec_compare
 
@@ -499,7 +498,6 @@ sec_true:
     ret
 
 sec_false:
-    sub si, 4
     pop cx
     mov al, 0
     ret
@@ -606,7 +604,6 @@ write_to:
     call to_16
     inc dx
 
-    sub si, 4
     call sec_reg
 
     mov al, 0x00
@@ -713,7 +710,7 @@ com_mov:
     mov di, reg_table
     cmp byte [si + 3], " "
     jne build_error
-    add si, 4
+    add si, 3
 
     call skip_space
 
@@ -729,15 +726,13 @@ com_mov:
     inc dx
     add si, 2
     call skip_space
-    sub si, 2
-    cmp byte [si + 2], ","
+    cmp byte [si], ","
     jne build_error
+    inc si
 
-    add si, 4
     call skip_space
     cmp byte [si], "["
     je from_mem
-    sub si, 4
 
     call sec_reg
     jc build_error
@@ -768,9 +763,8 @@ com_int:
     cmp byte [si + 3], " "
     jne build_error
 
-    add si, 4
+    add si, 3
     call skip_space
-    sub si, 4
 
     push dx
     call com_arg
@@ -832,7 +826,6 @@ jmp_skipped:
     jmp ins_compare
 
 jmp_ready:
-    add si, 3
     call skip_space
     push si
     jmp jmp_label
@@ -857,9 +850,8 @@ com_jmp:
     cmp byte [si + 3], " "
     jne build_error
 
-    add si, 4
+    add si, 3
     call skip_space
-    sub si, 4
 
     mov cx, 0
     cmp byte [si + 4], "0"
@@ -980,7 +972,7 @@ com_cmp:
     mov di, reg_table
     cmp byte [si + 3], " "
     jne build_error
-    add si, 4
+    add si, 3
 
     call skip_space
 
@@ -991,13 +983,11 @@ com_cmp:
 
     add si, 2
     call skip_space
-    sub si, 2
-    cmp byte [si + 2], ","
+    cmp byte [si], ","
     jne build_error
+    inc si
 
-    add si, 4
     call skip_space
-    sub si, 4
 
     call sec_reg
     jc build_error
@@ -1121,9 +1111,8 @@ flag_true:
     cmp byte [si], " "
     jne build_error
 
-    add si, 2
+    call to_space
     call skip_space
-    sub si, 2
 
     mov cx, 0
     cmp byte [si + 2], "0"
@@ -1151,57 +1140,19 @@ flag_true:
     je skip_comment
     jmp ins_compare
 
-fst_bit:
-    cmp ch, 2
-    je fst_16
-    ret
-
-fst_16:
-    mov bx, dx
-    mov byte [bytes + bx], 0xb8
-    ret
-
-scd_bit:
-    cmp ch, 2
-    je scd_16
-    ret
-
-scd_16:
-    dec dx
-    mov bx, dx
-    mov byte [bytes + bx], 0x89
-    inc dx
-    ret
-
-num_bit:
-    cmp byte [com_bit], 2
-    je num_16
-    cmp ch, 0
-    jne call_done
-    clc
-    ret
-
-num_16:
-    mov bx, dx
-    mov byte [bytes + bx], al
-    inc dx
-    clc
-    ret
-
 com_inc:
     mov bx, dx
     mov byte [bytes + bx], 0x40
     mov di, reg_table
     cmp byte [si + 3], " "
     jne build_error
-    add si, 4
+    add si, 3
 
     call skip_space
 
     call reg_compare
     jc build_error
     add si, 3
-    mov [com_bit], ch
     mov bx, dx
     add byte [bytes + bx], cl
     inc dx
@@ -1218,14 +1169,13 @@ com_dec:
     mov di, reg_table
     cmp byte [si + 3], " "
     jne build_error
-    add si, 4
+    add si, 3
 
     call skip_space
 
     call reg_compare
     jc build_error
     add si, 3
-    mov [com_bit], ch
     mov bx, dx
     add byte [bytes + bx], cl
     inc dx
@@ -1251,7 +1201,6 @@ db_loop:
     mov ah, 0x0e
 
     push dx
-    sub si, 3
     call com_arg
     pop dx
     jc build_error
@@ -1315,7 +1264,6 @@ com_dw:
 
 dw_loop:
     push dx
-    sub si, 3
     call com_arg
     pop dx
     jc build_error
@@ -1340,6 +1288,43 @@ dw_done:
     cmp byte [si - 1], ";"
     je skip_comment
     jmp ins_compare
+
+fst_bit:
+    cmp ch, 2
+    je fst_16
+    ret
+
+fst_16:
+    mov bx, dx
+    mov byte [bytes + bx], 0xb8
+    ret
+
+scd_bit:
+    cmp ch, 2
+    je scd_16
+    ret
+
+scd_16:
+    dec dx
+    mov bx, dx
+    mov byte [bytes + bx], 0x89
+    inc dx
+    ret
+
+num_bit:
+    cmp byte [com_bit], 2
+    je num_16
+    cmp ch, 0
+    jne call_done
+    clc
+    ret
+
+num_16:
+    mov bx, dx
+    mov byte [bytes + bx], al
+    inc dx
+    clc
+    ret
 
 reg_compare:
     cmp di, reg_end
@@ -1419,7 +1404,6 @@ len_done:
 com_arg:
     mov ax, 0
     mov cx, 0
-    add si, 3
     call skip_space
 
     cmp byte [si], 13
