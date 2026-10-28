@@ -56,14 +56,14 @@ new:
 exit:
 ```
 ```
-mov al, 48
+mov al, "0"
 
 loop:
     mov ah, 0x0e
     int 0x10
     inc al
-    cmp al, 58
-    je done
+    cmp al, "9"
+    ja done
     jmp loop
 
 done:
