@@ -266,11 +266,18 @@ ins_loop:
 
     je ins_true
 
-    add di, 8
+    add di, 12
     jmp ins_loop
 
 ins_true:
+    mov cx, [di + 10]
+    mov [ext], cl
+
+    mov cx, [di + 8]
+    mov [opcode], cl
+
     mov cx, [di + 6]
+    mov [com_bit], cl
 
     mov bx, dx
     mov byte [bytes + bx], cl
@@ -455,6 +462,118 @@ bin:
     mov dh, 0
     int 0x13
 
+    mov al, [bytes + 0]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 1]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 2]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 3]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 4]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 5]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 6]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 7]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 8]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 9]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 10]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 11]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 12]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
+    mov al, [bytes + 13]
+    mov ah, 0
+    mov dx, 0
+    call number
+    mov al, " "
+    mov ah, 0x0e
+    int 0x10
+
     jmp return
 
 error_count:
@@ -531,14 +650,17 @@ reg_16:
 
 true_16:
     mov bx, dx
-    mov byte [bytes + bx], 0x89
+    mov al, [opcode]
+    mov byte [bytes + bx], al
+    add byte [bytes + bx], 1
     ret
 
 mov_reg:
     push bx
     dec dx
     mov bx, dx
-    mov byte [bytes + bx], 0x88
+    mov al, [opcode]
+    mov byte [bytes + bx], al
     call reg_16
     inc dx
     pop bx
@@ -560,7 +682,9 @@ to_16:
 
 is_to:
     mov bx, dx
-    mov byte [bytes + bx], 0x89
+    mov al, [opcode]
+    mov byte [bytes + bx], al
+    add byte [bytes + bx], 1
     ret
 
 to_mem:
@@ -608,7 +732,8 @@ write_to:
     call skip_space
 
     mov bx, dx
-    mov byte [bytes + bx], 0x88
+    mov al, [opcode]
+    mov byte [bytes + bx], al
     call to_16
     inc dx
 
@@ -631,7 +756,9 @@ from_16:
 
 is_from:
     mov bx, dx
-    mov byte [bytes + bx], 0x8b
+    mov al, [opcode]
+    mov byte [bytes + bx], al
+    add byte [bytes + bx], 3
     ret
 
 from_mem:
@@ -677,7 +804,9 @@ write_from:
     push bx
     dec dx
     mov bx, dx
-    mov byte [bytes + bx], 0x8a
+    mov al, [opcode]
+    mov byte [bytes + bx], al
+    add byte [bytes + bx], 2
     call from_16
     inc dx
     pop bx
@@ -699,8 +828,8 @@ com_mov:
 
     call reg_compare
     jc build_error
-    mov [com_bit], ch
     call fst_bit
+    mov [com_bit], ch
     mov bx, dx
     add byte [bytes + bx], cl
     inc dx
@@ -837,116 +966,6 @@ com_jmp:
 
     jmp ins_compare
 
-cmp_reg:
-    mov al, 0x38
-    cmp ch, 2
-    jne op
-    mov al, 0x39
-    jmp op
-
-op:
-    push bx
-    mov bx, dx
-    mov byte [bytes + bx], al
-    call reg_16
-    jc build_error
-    inc dx
-    pop bx
-
-    mov al, 0xc0
-    shl bl, 3
-    or al, bl
-    or al, cl
-    mov bx, dx
-    mov byte [bytes + bx], al
-    inc dx
-
-    jmp ins_compare
-
-op_ax:
-    mov bx, dx
-    mov byte [bytes + bx], 0x3d
-    inc dx
-    jmp write_imm
-
-not_al:
-    cmp bh, 2
-    je op_other
-    mov bx, dx
-    mov byte [bytes + bx], 0x80
-    inc dx
-    mov al, 0xf8
-    or al, bl
-    mov bx, dx
-    mov [bytes + bx], al
-    inc dx
-    jmp write_imm
-
-op_other:
-    push bx
-    mov bx, dx
-    mov byte [bytes + bx], 0x81
-    inc dx
-    mov al, 0xf8
-    pop bx
-    or al, bl
-    mov bx, dx
-    mov [bytes + bx], al
-    inc dx
-    jmp write_imm
-
-write_imm:
-    cmp byte [com_bit], 1
-    jne is_16
-    mov bx, dx
-    mov [bytes + bx], cl
-    inc dx
-    cmp ch, 0
-    jne build_error
-    jmp ins_compare
-
-is_16:
-    mov bx, dx
-    mov [bytes + bx], cl
-    inc dx
-    mov bx, dx
-    mov [bytes + bx], ch
-    inc dx
-    jmp ins_compare
-
-com_cmp:
-    call reg_compare
-    jc build_error
-    mov [com_bit], ch
-    call fst_bit
-
-    add si, 2
-    call skip_space
-    cmp byte [si], ","
-    jne build_error
-    inc si
-
-    call skip_space
-
-    call sec_reg
-    jc build_error
-    cmp al, 1
-    je cmp_reg
-
-    push cx
-    push dx
-    call com_arg
-    dec si
-    pop dx
-    pop bx
-    jc build_error
-    cmp bl, 0
-    jne not_al
-    cmp bh, 2
-    je op_ax
-
-    jmp write_imm
-
 a_flag:
     mov di, jmps
     add di, [j_count]
@@ -1073,18 +1092,6 @@ com_inc:
 
     jmp ins_compare
 
-com_dec:
-    dec dx
-
-    call reg_compare
-    jc build_error
-    add si, 2
-    mov bx, dx
-    add byte [bytes + bx], cl
-    inc dx
-
-    jmp ins_compare
-
 com_db:
     dec dx
     jmp db_loop
@@ -1198,6 +1205,105 @@ com_call:
 
     jmp ins_compare
 
+com_add:
+    dec dx
+    mov di, reg_table
+    call reg_compare
+    jc build_error
+    add si, 2
+    mov [op1_id], cl
+    
+    call skip_space
+    cmp byte [si], ","
+    jne build_error
+    inc si
+    call skip_space
+
+    push si
+    mov di, reg_table
+    call reg_compare
+    pop si
+    jc is_immediate
+
+    cmp ch, [com_bit]
+    jne build_error
+    
+    mov al, [opcode]
+    cmp byte [com_bit], 2
+    jne emit_rr
+    inc al
+    jmp emit_rr
+
+emit_rr:
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+    
+    mov al, 0xC0
+    shl cl, 3
+    or al, cl
+    or al, [op1_id]
+    
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+    jmp ins_compare
+
+is_immediate:
+    push dx
+    call com_arg
+    pop dx
+    jc build_error
+
+    cmp byte [op1_id], 0
+    jne not_acc
+
+    mov al, [com_bit]
+    cmp byte [com_bit], 2
+    jne emit_acc
+    inc al
+    jmp emit_acc
+
+emit_acc:
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+    jmp write_imm
+
+not_acc:
+    mov al, 0x80
+    cmp byte [com_bit], 2
+    jne emit_long
+    mov al, 0x81
+    jmp emit_long
+
+emit_long:
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+
+    mov al, 0xC0
+    mov bl, [ext]
+    shl bl, 3
+    or al, bl
+    or al, [op1_id]
+    
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+    jmp write_imm
+
+write_imm:
+    mov bx, dx
+    mov [bytes + bx], cl
+    inc dx
+    cmp byte [com_bit], 2
+    jne ins_compare
+    mov bx, dx
+    mov [bytes + bx], ch
+    inc dx
+    jmp ins_compare
+
 fst_bit:
     cmp ch, 2
     je fst_16
@@ -1205,7 +1311,7 @@ fst_bit:
 
 fst_16:
     mov bx, dx
-    mov byte [bytes + bx], 0xb8
+    add byte [bytes + bx], 8
     ret
 
 scd_bit:
@@ -1364,6 +1470,8 @@ com_hex:
     je end_hex
     cmp bl, " "
     je end_hex
+    cmp al, ","
+    je end_hex
     cmp bl, ";"
     je end_hex
 
@@ -1407,6 +1515,8 @@ num_dec:
     cmp al, 13
     je done
     cmp al, " "
+    je done
+    cmp al, ","
     je done
     cmp al, ";"
     je done
@@ -1507,6 +1617,13 @@ ins_db: db "db"
 ins_dw: db "dw"
 ins_call: db "call"
 ins_ret: db "ret"
+ins_add: db "add"
+ins_or: db "or"
+ins_and: db "and"
+ins_sub: db "sub"
+ins_xor: db "xor"
+ins_clc: db "clc"
+ins_stc: db "stc"
 
 flag_jb: db "jb"
 flag_jc: db "jc"
@@ -1541,15 +1658,22 @@ flag_jpo: db "jpo"
 flag_jcxz: db "jcxz"
 
 ins_table:
-    dw ins_mov, com_mov, 3, 0xb0
-    dw ins_int, com_int, 3, 0xcd
-    dw ins_cmp, com_cmp, 3, 0x3c
-    dw ins_inc, com_inc, 3, 0x40
-    dw ins_dec, com_dec, 3, 0x48
-    dw ins_db, com_db, 2, 0x00
-    dw ins_dw, com_dw, 2, 0x00
-    dw ins_call, com_call, 4, 0xe8
-    dw ins_ret, ins_compare, 3, 0xc3
+    dw ins_mov, com_mov, 3, 0xb0, 0x88, 0
+    dw ins_int, com_int, 3, 0xcd, 0x00, 0
+    dw ins_cmp, com_add, 3, 0x3c, 0x38, 7
+    dw ins_inc, com_inc, 3, 0x40, 0x00, 0
+    dw ins_dec, com_inc, 3, 0x48, 0x00, 0
+    dw ins_db, com_db, 2, 0x00, 0x00, 0
+    dw ins_dw, com_dw, 2, 0x00, 0x00, 0
+    dw ins_call, com_call, 4, 0xe8, 0x00, 0
+    dw ins_ret, ins_compare, 3, 0xc3, 0x00, 0
+    dw ins_add, com_add, 3, 0x04, 0x00, 0
+    dw ins_or, com_add, 2, 0x0c, 0x08, 1
+    dw ins_and, com_add, 3, 0x24, 020, 4
+    dw ins_sub, com_add, 3, 0x2c, 0x28, 5
+    dw ins_xor, com_add, 3, 0x34, 0x30, 6
+    dw ins_clc, ins_compare, 3, 0xf8, 0x00, 0
+    dw ins_stc, ins_compare, 3, 0xf9, 0x00, 0
 
 ins_end:
 
@@ -1590,6 +1714,9 @@ flag_table:
 flag_end:
 
 com_bit: db 0
+opcode: db 0
+ext: db 0
+op1_id: db 0
 labels: times 3 * 32 dw 0
 l_count: dw 0
 jmps: times 3 * 32 dw 0
