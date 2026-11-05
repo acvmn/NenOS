@@ -277,7 +277,7 @@ ins_true:
     mov [opcode], cl
 
     mov cx, [di + 6]
-    mov [com_bit], cl
+    mov [acc], cl
 
     mov bx, dx
     mov byte [bytes + bx], cl
@@ -1100,6 +1100,7 @@ com_add:
     jc build_error
     add si, 2
     mov [op1_id], cl
+    mov [com_bit], ch
     
     call skip_space
     cmp byte [si], ","
@@ -1135,6 +1136,7 @@ emit_rr:
     mov bx, dx
     mov [bytes + bx], al
     inc dx
+    add si, 2
     jmp ins_compare
 
 is_immediate:
@@ -1146,7 +1148,7 @@ is_immediate:
     cmp byte [op1_id], 0
     jne not_acc
 
-    mov al, [com_bit]
+    mov al, [acc]
     cmp byte [com_bit], 2
     jne emit_acc
     inc al
@@ -1191,6 +1193,44 @@ write_imm:
     mov [bytes + bx], ch
     inc dx
     jmp ins_compare
+
+com_push:
+    dec dx
+
+    call reg_compare
+    jc build_error
+    cmp ch, 2
+    jne build_error
+    add si, 2
+    mov bx, dx
+    add byte [bytes + bx], cl
+    inc dx
+
+    jmp ins_compare
+
+mul_8:
+    inc dx
+    mov al, 0xc0
+    mov bl, [ext]
+    or al, bl
+    or al, cl
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+
+    add si, 2
+    jmp ins_compare
+
+com_mul:
+    dec dx
+    call reg_compare
+    jc build_error
+    cmp ch, 2
+    jne mul_8
+
+    mov bx, dx
+    inc byte [bytes + bx]
+    jmp mul_8
 
 fst_bit:
     cmp ch, 2
@@ -1358,7 +1398,7 @@ com_hex:
     je end_hex
     cmp bl, " "
     je end_hex
-    cmp al, ","
+    cmp bl, ","
     je end_hex
     cmp bl, ";"
     je end_hex
@@ -1512,6 +1552,10 @@ ins_sub: db "sub"
 ins_xor: db "xor"
 ins_clc: db "clc"
 ins_stc: db "stc"
+ins_push: db "push"
+ins_pop: db "pop"
+ins_mul: db "mul"
+ins_div: db "div"
 
 flag_jb: db "jb"
 flag_jc: db "jc"
@@ -1562,6 +1606,10 @@ ins_table:
     dw ins_xor, com_add, 3, 0x34, 0x30, 6
     dw ins_clc, ins_compare, 3, 0xf8, 0x00, 0
     dw ins_stc, ins_compare, 3, 0xf9, 0x00, 0
+    dw ins_push, com_push, 4, 0x50, 0x00, 0
+    dw ins_pop, com_push, 3, 0x58, 0x00, 0
+    dw ins_mul, com_mul, 3, 0xf6, 0x00, 0x20
+    dw ins_div, com_mul, 3, 0xf7, 0x00, 0x30
 
 ins_end:
 
@@ -1602,6 +1650,7 @@ flag_table:
 flag_end:
 
 com_bit: db 0
+acc: db 0
 opcode: db 0
 ext: db 0
 op1_id: db 0
