@@ -200,6 +200,10 @@ not_label:
     ret
 
 is_next:
+    cmp byte [si + bx], "'"
+    je ins_loop
+    cmp byte [si + bx], '"'
+    je ins_loop
     cmp byte [si + bx], ":"
     je ins_compare
     cmp byte [si + bx], 13
