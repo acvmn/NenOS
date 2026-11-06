@@ -539,7 +539,7 @@ copy:
     mov [0x9e00], dx
 
     mov ah, 0x02
-    mov al, 1
+    mov al, 4
     mov dl, 0x80
     mov dh, 0
     mov ch, 0
@@ -549,14 +549,14 @@ copy:
 
     mov si, 0x9e00
     mov di, document
-    mov cx, 512
+    mov cx, 2048
     rep movsb
 
     mov si, document
-    mov cx, 512
+    mov cx, 2048
     mov bx, document
     mov ah, 0x03
-    mov al, 1
+    mov al, 4
     mov ch, 0
     mov cl, [dst]
     mov dl, 0x80
@@ -672,8 +672,11 @@ create_zero:
     jmp write_sector
 
 write_sector:
-    add dx, 42
-    mov ax, dx
+    dec dl
+    mov al, dl
+    mov bl, 4
+    mul bl
+    inc al
     mov [di], al
 
     mov ah, 0x03
@@ -773,7 +776,7 @@ delete_delete:
     jz return
 
     mov ah, 0x02
-    mov al, 1
+    mov al, 4
     mov ch, 0
     mov dl, 0x80
     mov dh, 0
@@ -781,12 +784,12 @@ delete_delete:
     int 0x13
 
     mov di, 0x9e00
-    mov cx, 512
+    mov cx, 2048
     xor al, al
     rep stosb
 
     mov ah, 0x03
-    mov al, 1
+    mov al, 4
     mov ch, 0
     mov cl, [del_sector]
     mov dl, 0x80
@@ -894,7 +897,7 @@ run:
     mov [0x9e00], dx
 
     mov ah, 0x02
-    mov al, 1
+    mov al, 4
     mov ch, 0
     mov dl, 0x80
     mov dh, 0
@@ -1018,7 +1021,7 @@ write:
     mov [0x9e00], dx
 
     mov ah, 0x02
-    mov al, 1
+    mov al, 4
     mov ch, 0
     mov dl, 0x80
     mov dh, 0
@@ -1038,12 +1041,12 @@ write:
 
     mov si, 0x9e00
     mov di, document
-    mov cx, 512
+    mov cx, 2048
     rep movsb
 
     mov di, document
     mov al, 0
-    mov cx, 512
+    mov cx, 2048
     repne scasb
     sub di, document
     dec di
@@ -1065,7 +1068,7 @@ input_write:
     je back_write
     cmp al, 27
     je save
-    cmp cx, 512
+    cmp cx, 2047
     je input_write
     cmp al, 13
     je line
@@ -1090,10 +1093,10 @@ save:
     stosb
 
     mov si, document
-    mov cx, 512
+    mov cx, 2048
     mov bx, document
     mov ah, 0x03
-    mov al, 1
+    mov al, 4
     pop cx
     mov dl, 0x80
     mov dh, 0
@@ -1274,7 +1277,7 @@ read:
     mov [0x9e00], dx
 
     mov ah, 0x02
-    mov al, 1
+    mov al, 4
     mov ch, 0
     mov dl, 0x80
     mov dh, 0
@@ -1384,7 +1387,7 @@ return:
     jmp input
 
 command: times 256 db 0
-document: times 512 db 0
+document: times 2048 db 0
 
 welcome: db "Welcome to NenOS!", 13, "Type <help> to show available commands.", 13, "Press <TAB> to change language.", 13, 0
 console: db "NenOS> ", 0
@@ -1394,7 +1397,7 @@ exists: db "Already exists.", 13, 0
 not_found: db "Not found.", 13, 0
 dir_list: db "Directory:", 13, 0
 dir_tab: db "   ", 0
-available_commands: db "Available Commands:", 13, "   1. BUILD <from> <to> - compile the file to binary.", 13, "   2. CALC <sample> - calculate.", 13, "   3. CLS - clear the screen.", 13, "   4. COPY <from> <to> - copy the document.", 13, "   5. CREATE <name> - create the document.", 13, "   6. DELETE <name> - delete the document.", 13, "   7. DIR - show directory.", 13, "   8. HELP - displaying available commands.", 13, "   9. READ <name> - read the document.", 13, "  10. REBOOT - reboot the computer.", 13, "  11. RUN <name> - run binary.", 13, "  12. TIME - launches the watch app.", 13, "  13. WRITE <name> - write the document.", 13, 0
+available_commands: db "Available Commands:", 13, "   1. BUILD <from> <to> - compile to binary.", 13, "   2. CALC <sample> - calculate.", 13, "   3. CLS - clear the screen.", 13, "   4. COPY <from> <to> - copy the document.", 13, "   5. CREATE <name> - create the document.", 13, "   6. DELETE <name> - delete the document.", 13, "   7. DIR - show directory.", 13, "   8. HELP - displaying available commands.", 13, "   9. READ <name> - read the document.", 13, "  10. REBOOT - reboot the computer.", 13, "  11. RUN <name> - run binary.", 13, "  12. TIME - launches the watch app.", 13, "  13. WRITE <name> - write the document.", 13, 0
 readed: db "Document:", 13, 0
 not_bin: db "Not binary file.", 13, 0
 press_esc: db "Press <ESC> to save.", 13, 0
@@ -1455,6 +1458,6 @@ upper:
     db 0x88, 0x92, 0x9c, 0x81, 0x9e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     times 0xc0 db 0
 
-times 16384-($-$$) db 0
-
 font: incbin "../src/cp866-8x16.fnt"
+
+times 32768-($-$$) db 0
