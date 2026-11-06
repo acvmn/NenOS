@@ -2,7 +2,7 @@
 NenOS is an operating system written in assembly language. It runs in real mode (x16) using BIOS interrupts. It has a simple file system and a built‑in assembler.
 
 ## Commands
-- BUILD &lt;from&gt; &lt;to&gt; - compile the file.
+- BUILD &lt;from&gt; &lt;to&gt; - compile to binary.
 - CALC &lt;sample&gt; - calculate.
 - CLS - clear the screen.
 - COPY &lt;from&gt; &lt;to&gt; - copy the document.
@@ -12,7 +12,7 @@ NenOS is an operating system written in assembly language. It runs in real mode 
 - HELP - displaying available commands.
 - READ &lt;number&gt; - read the document.
 - REBOOT - reboot the computer.
-- RUN &lt;number&gt; - run the program.
+- RUN &lt;number&gt; - run binary.
 - TIME - launches the watch app.
 - WRITE &lt;number&gt; - write the document.
 
