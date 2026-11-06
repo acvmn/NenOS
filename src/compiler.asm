@@ -241,9 +241,6 @@ ins_compare:
 ins_loop:
     call skip_space
 
-    cmp byte [si], "j"
-    je com_flag
-
     cmp byte [si], 0
     je bin
 
@@ -826,19 +823,10 @@ jmp_label:
     jmp jmp_label
 
 com_jmp:
-    mov bx, dx
-    mov byte [bytes + bx], 0xe9
-    inc dx
-    cmp byte [si + 3], " "
-    jne build_error
-
-    add si, 3
-    call skip_space
-
     mov cx, 0
-    cmp byte [si + 4], "0"
+    cmp byte [si], "0"
     jl jmp_ready
-    cmp byte [si + 4], "9"
+    cmp byte [si], "9"
     jg jmp_ready
 
     push dx
@@ -909,50 +897,11 @@ flag_label:
     inc cx
     jmp flag_label
 
-com_flag:
-    mov di, flag_table
-    jmp flag_compare
-
-flag_compare:
-    cmp di, flag_end
-    jae build_error
-
-    mov bx, [di]
-    mov cx, [di + 4]
-
-    push si
-    push di
-
-    mov di, bx
-    repe cmpsb
-
-    pop di
-    pop si
-
-    je flag_true
-
-    add di, 6
-    jmp flag_compare
-
-flag_true:
-    mov ax, [di + 2]
-    mov cx, [di + 4]
-    cmp ax, 0xe9
-    je com_jmp
-    add si, cx
-    mov bx, dx
-    mov byte [bytes + bx], al
-    inc dx
-    cmp byte [si], " "
-    jne build_error
-
-    call to_space
-    call skip_space
-
+com_jb:
     mov cx, 0
-    cmp byte [si + 2], "0"
+    cmp byte [si], "0"
     jl flag_ready
-    cmp byte [si + 2], "9"
+    cmp byte [si], "9"
     jg flag_ready
 
     push dx
@@ -1235,6 +1184,96 @@ com_mul:
     mov bx, dx
     inc byte [bytes + bx]
     jmp mul_8
+
+com_shl:
+    dec dx
+    mov di, reg_table
+    call reg_compare
+    jc build_error
+    add si, 2
+    mov [op1_id], cl
+    mov [com_bit], ch
+    
+    call skip_space
+    cmp byte [si], ","
+    jne build_error
+    inc si
+    call skip_space
+
+    cmp byte [si], "1"
+    je shift_1
+
+    cmp byte [si], "c"
+    jne shift_imm
+    cmp byte [si + 1], "l"
+    jne shift_imm
+    add si, 2
+    jmp shift_cl
+
+shift_1:
+    inc si
+    mov al, 0xd0
+    cmp byte [com_bit], 2
+    jne build_modrm
+    mov al, 0xd1
+    jmp build_modrm
+
+shift_cl:
+    mov al, 0xd2
+    cmp byte [com_bit], 2
+    jne build_modrm
+    mov al, 0xd3
+    jmp build_modrm
+
+shift_imm:
+    push dx
+    call com_arg
+    pop dx
+    jc build_error
+    mov [op2_val], cx
+
+    mov al, 0xc0
+    cmp byte [com_bit], 2
+    jne emit_imm_op
+    mov al, 0xc1
+    jmp emit_imm_op
+
+build_modrm:
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+
+    mov al, 0xc0
+    mov bl, [ext]
+    shl bl, 3
+    or al, bl
+    or al, [op1_id]
+
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+    jmp ins_compare
+
+emit_imm_op:
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+
+    mov al, 0xc0
+    mov bl, [ext]
+    shl bl, 3
+    or al, bl
+    or al, [op1_id]
+
+    mov bx, dx
+    mov [bytes + bx], al
+    inc dx
+
+    mov cx, [op2_val]
+    mov bx, dx
+    mov [bytes + bx], cl
+    inc dx
+    jmp ins_compare
 
 fst_bit:
     cmp ch, 2
@@ -1560,6 +1599,8 @@ ins_push: db "push"
 ins_pop: db "pop"
 ins_mul: db "mul"
 ins_div: db "div"
+ins_shl: db "shl"
+ins_shr: db "shr"
 
 flag_jb: db "jb"
 flag_jc: db "jc"
@@ -1605,7 +1646,7 @@ ins_table:
     dw ins_ret, ins_compare, 3, 0xc3, 0x00, 0
     dw ins_add, com_add, 3, 0x04, 0x00, 0
     dw ins_or, com_add, 2, 0x0c, 0x08, 1
-    dw ins_and, com_add, 3, 0x24, 020, 4
+    dw ins_and, com_add, 3, 0x24, 0x20, 4
     dw ins_sub, com_add, 3, 0x2c, 0x28, 5
     dw ins_xor, com_add, 3, 0x34, 0x30, 6
     dw ins_clc, ins_compare, 3, 0xf8, 0x00, 0
@@ -1613,54 +1654,53 @@ ins_table:
     dw ins_push, com_push, 4, 0x50, 0x00, 0
     dw ins_pop, com_push, 3, 0x58, 0x00, 0
     dw ins_mul, com_mul, 3, 0xf6, 0x00, 0x20
-    dw ins_div, com_mul, 3, 0xf7, 0x00, 0x30
+    dw ins_div, com_mul, 3, 0xf6, 0x00, 0x30
+    dw ins_shl, com_shl, 3, 0x00, 0x00, 4
+    dw ins_shr, com_shl, 3, 0x00, 0x00, 5
+    dw ins_jmp, com_jmp, 3, 0xe9, 0x00, 0
+    dw flag_jb, com_jb, 2, 0x72, 0x00, 0
+    dw flag_jc, com_jb, 2, 0x72, 0x00, 0
+    dw flag_jnae, com_jb, 4, 0x72, 0x00, 0
+    dw flag_jae, com_jb, 3, 0x73, 0x00, 0
+    dw flag_jnb, com_jb, 3, 0x73, 0x00, 0
+    dw flag_jnc, com_jb, 3, 0x73, 0x00, 0
+    dw flag_jbe, com_jb, 3, 0x76, 0x00, 0
+    dw flag_jna, com_jb, 3, 0x76, 0x00, 0
+    dw flag_ja, com_jb, 2, 0x77, 0x00, 0
+    dw flag_jnbe, com_jb, 4, 0x77, 0x00, 0
+    dw flag_jl, com_jb, 2, 0x7c, 0x00, 0
+    dw flag_jnge, com_jb, 4, 0x7c, 0x00, 0
+    dw flag_jge, com_jb, 3, 0x7d, 0x00, 0
+    dw flag_jnl, com_jb, 3, 0x7d, 0x00, 0
+    dw flag_jle, com_jb, 3, 0x7e, 0x00, 0
+    dw flag_jng, com_jb, 3, 0x7e, 0x00, 0
+    dw flag_jg, com_jb, 2, 0x7f, 0x00, 0
+    dw flag_jnle, com_jb, 4, 0x7f, 0x00, 0
+    dw flag_je, com_jb, 2, 0x74, 0x00, 0
+    dw flag_jz, com_jb, 2, 0x74, 0x00, 0
+    dw flag_jne, com_jb, 3, 0x75, 0x00, 0
+    dw flag_jnz, com_jb, 3, 0x75, 0x00, 0
+    dw flag_js, com_jb, 2, 0x78, 0x00, 0
+    dw flag_jns, com_jb, 3, 0x79, 0x00, 0
+    dw flag_jo, com_jb, 2, 0x70, 0x00, 0
+    dw flag_jno, com_jb, 3, 0x71, 0x00, 0
+    dw flag_jp, com_jb, 2, 0x7a, 0x00, 0
+    dw flag_jpe, com_jb, 3, 0x7a, 0x00, 0
+    dw flag_jnp, com_jb, 3, 0x7b, 0x00, 0
+    dw flag_jpo, com_jb, 3, 0x7b, 0x00, 0
+    dw flag_jcxz, com_jb, 4, 0xe3, 0x00, 0
 
 ins_end:
-
-flag_table:
-    dw ins_jmp, 0xe9, 3
-    dw flag_jb, 0x72, 2
-    dw flag_jc, 0x72, 2
-    dw flag_jnae, 0x72, 4
-    dw flag_jae, 0x73, 3
-    dw flag_jnb, 0x73, 3
-    dw flag_jnc, 0x73, 3
-    dw flag_jbe, 0x76, 3
-    dw flag_jna, 0x76, 3
-    dw flag_ja, 0x77, 2
-    dw flag_jnbe, 0x77, 4
-    dw flag_jl, 0x7c, 2
-    dw flag_jnge, 0x7c, 4
-    dw flag_jge, 0x7d, 3
-    dw flag_jnl, 0x7d, 3
-    dw flag_jle, 0x7e, 3
-    dw flag_jng, 0x7e, 3
-    dw flag_jg, 0x7f, 2
-    dw flag_jnle, 0x7f, 4
-    dw flag_je, 0x74, 2
-    dw flag_jz, 0x74, 2
-    dw flag_jne, 0x75, 3
-    dw flag_jnz, 0x75, 3
-    dw flag_js, 0x78, 2
-    dw flag_jns, 0x79, 3
-    dw flag_jo, 0x70, 2
-    dw flag_jno, 0x71, 3
-    dw flag_jp, 0x7a, 2
-    dw flag_jpe, 0x7a, 3
-    dw flag_jnp, 0x7b, 3
-    dw flag_jpo, 0x7b, 3
-    dw flag_jcxz, 0xe3, 4
-
-flag_end:
 
 com_bit: db 0
 acc: db 0
 opcode: db 0
 ext: db 0
 op1_id: db 0
-labels: times 3 * 32 dw 0
+op2_val: dw 0
+labels: times 3 * 256 dw 0
 l_count: dw 0
-jmps: times 3 * 32 dw 0
+jmps: times 3 * 256 dw 0
 j_count: dw 0
 error_line: db "Error line: ", 0
 bytes: times 512 db 0

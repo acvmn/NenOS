@@ -1394,7 +1394,7 @@ exists: db "Already exists.", 13, 0
 not_found: db "Not found.", 13, 0
 dir_list: db "Directory:", 13, 0
 dir_tab: db "   ", 0
-available_commands: db "Available Commands:", 13, "   1. BUILD <from> <to> - compile the file.", 13, "   2. CALC <sample> - calculate.", 13, "   3. CLS - clear the screen.", 13, "   4. COPY <from> <to> - copy the document.", 13, "   5. CREATE <name> - create the document.", 13, "   6. DELETE <name> - delete the document.", 13, "   7. DIR - show directory.", 13, "   8. HELP - displaying available commands.", 13, "   9. READ <name> - read the document.", 13, "  10. REBOOT - reboot the computer.", 13, "  11. RUN <name> - run the script.", 13, "  12. TIME - launches the watch app.", 13, "  13. WRITE <name> - write the document.", 13, 0
+available_commands: db "Available Commands:", 13, "   1. BUILD <from> <to> - compile the file to binary.", 13, "   2. CALC <sample> - calculate.", 13, "   3. CLS - clear the screen.", 13, "   4. COPY <from> <to> - copy the document.", 13, "   5. CREATE <name> - create the document.", 13, "   6. DELETE <name> - delete the document.", 13, "   7. DIR - show directory.", 13, "   8. HELP - displaying available commands.", 13, "   9. READ <name> - read the document.", 13, "  10. REBOOT - reboot the computer.", 13, "  11. RUN <name> - run binary.", 13, "  12. TIME - launches the watch app.", 13, "  13. WRITE <name> - write the document.", 13, 0
 readed: db "Document:", 13, 0
 not_bin: db "Not binary file.", 13, 0
 press_esc: db "Press <ESC> to save.", 13, 0
