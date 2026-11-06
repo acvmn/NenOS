@@ -46,6 +46,7 @@ The built‑in NenOS assembler currently supports the:
  - SHL
  - SHR
  - and the entire syntax of a standard assembler...
+
 This allows you to write simple programs using the WRITE command, compile them using the BUILD command, and run them using the RUN command. Code examples:
 ```
 db 0xb0, 0x21, 0xb4, 0x0e, 0xcd, 0c10
