@@ -17,7 +17,35 @@ NenOS is an operating system written in assembly language. It runs in real mode 
 - WRITE &lt;number&gt; - write the document.
 
 ## Assembler
-The built‑in NenOS assembler currently supports the MOV, all 8/16 bit registers and memory, INT with all interrupts, JMP, labels, CMP, all flags, INC, DEC, CALL, RET, DB, DW, AND, OR, ADD, SUB, XOR, CLC, STC, PUSH, POP, MUL, DIV, SHL, SHR and the entire syntax of a standard assembler. This allows you to write simple programs using the WRITE command, compile them using the BUILD command, and run them using the RUN command. Code examples:
+The built‑in NenOS assembler currently supports the:
+ - MOV
+ - all 8/16 bit registers and memory
+ - INT with all interrupts
+ - JMP
+ - labels
+ - CMP
+ - all flags
+ - INC
+ - DEC
+ - CALL
+ - RET
+ - DB
+ - DW
+ - AND
+ - OR
+ - ADD
+ - SUB
+ - XOR
+ - CLC
+ - STC
+ - PUSH
+ - POP
+ - MUL
+ - DIV
+ - SHL
+ - SHR
+ - and the entire syntax of a standard assembler...
+This allows you to write simple programs using the WRITE command, compile them using the BUILD command, and run them using the RUN command. Code examples:
 ```
 db 0xb0, 0x21, 0xb4, 0x0e, 0xcd, 0c10
 ```
