@@ -20,7 +20,8 @@ NenOS is an operating system written in assembly language. It runs in real mode 
 The built‑in NenOS assembler currently supports the:
  - MOV
  - all 8/16 bit registers and memory
- - INT with all interrupts
+ - INT
+ - all interrupts
  - JMP
  - labels
  - CMP
