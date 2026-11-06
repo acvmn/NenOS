@@ -68,6 +68,8 @@ done:
 ```
 ```
 mov si, text
+call print
+ret
 
 print:
     mov al, [si]
@@ -78,9 +80,10 @@ print:
     int 0x10
     jmp print
 
-text: db "Hello, World!", 0
-
 done:
+    ret
+
+text: db "Hello, World!", 0
 ```
 
 ## Screenshots
