@@ -10,6 +10,7 @@ NenOS is an operating system written in assembly language. It runs in real mode 
 - DELETE - delete the document.
 - DIR - show directory.
 - HELP - displaying available commands.
+- MEM - displaying available memory.
 - READ &lt;number&gt; - read the document.
 - REBOOT - reboot the computer.
 - RUN &lt;number&gt; - run binary.
