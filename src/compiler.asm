@@ -18,7 +18,7 @@ build:
     mov [dst], cl
 
     mov ah, 0x02
-    mov al, 1
+    mov al, 4
     mov ch, 0
     mov cl, [src]
     mov dl, 0x80
@@ -453,10 +453,10 @@ bin:
     jc build_error
 
     mov si, bytes
-    mov cx, 512
+    mov cx, 2048
     mov bx, bytes
     mov ah, 0x03
-    mov al, 1
+    mov al, 4
     mov ch, 0
     mov cl, [dst]
     mov dl, 0x80
@@ -1048,18 +1048,23 @@ com_call:
 
 com_add:
     dec dx
+    cmp byte [si], "["
+    je to_mem
+
     mov di, reg_table
     call reg_compare
     jc build_error
     add si, 2
     mov [op1_id], cl
     mov [com_bit], ch
-    
     call skip_space
     cmp byte [si], ","
     jne build_error
     inc si
     call skip_space
+
+    cmp byte [si], "["
+    je from_mem
 
     push si
     mov di, reg_table
@@ -1567,7 +1572,6 @@ reg_table:
     dw reg_bp, 5, 2, 2
     dw reg_si, 6, 2, 2
     dw reg_di, 7, 2, 2
-
 reg_end:
 
 mem_table:
@@ -1575,7 +1579,6 @@ mem_table:
     dw reg_di, 5, 2
     dw reg_bp, 6, 2
     dw reg_bx, 7, 2
-
 mem_end:
 
 ins_mov: db "mov"
@@ -1601,7 +1604,6 @@ ins_mul: db "mul"
 ins_div: db "div"
 ins_shl: db "shl"
 ins_shr: db "shr"
-
 flag_jb: db "jb"
 flag_jc: db "jc"
 flag_jnae: db "jnae"
@@ -1689,7 +1691,6 @@ ins_table:
     dw flag_jnp, com_jb, 3, 0x7b, 0x00, 0
     dw flag_jpo, com_jb, 3, 0x7b, 0x00, 0
     dw flag_jcxz, com_jb, 4, 0xe3, 0x00, 0
-
 ins_end:
 
 com_bit: db 0

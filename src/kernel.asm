@@ -1,5 +1,3 @@
-org 0x7e00
-
 start:
     mov sp, 0x7c00
 
@@ -216,6 +214,7 @@ check_true:
     add si, cx
     cmp byte [si], " "
     jne check_false
+    call skip_space
 
     mov ax, [di + 2]
     jmp ax
@@ -457,7 +456,6 @@ negative:
     jmp return
 
 calc:
-    call skip_space
     mov cl, 0
     call calc_first
 
@@ -488,8 +486,6 @@ to_space:
     jmp to_space
 
 cls:
-    call skip_space
-
     mov ah, 0x06
     mov al, 0x00
     mov ch, 0
@@ -517,7 +513,6 @@ found:
     jmp return
 
 copy:
-    call skip_space
     mov cl, 0
     call argc_file
     test cl, cl
@@ -566,7 +561,6 @@ copy:
     jmp return
 
 create:
-    call skip_space
     push si
 
     mov ah, 0x02
@@ -697,7 +691,6 @@ pad_zero:
     jmp write_sector
 
 delete:
-    call skip_space
     push si
 
     mov ah, 0x02
@@ -800,7 +793,6 @@ delete_delete:
     jmp return
 
 dir:
-    call skip_space
     push si
 
     mov si, dir_list
@@ -866,7 +858,6 @@ dir_next:
     jmp return
 
 help:
-    call skip_space
 
     mov si, available_commands
     call print
@@ -874,8 +865,6 @@ help:
     jmp return
 
 reboot:
-    call skip_space
-
     jmp 0xffff:0x0000
 
 run_error:
@@ -885,7 +874,6 @@ run_error:
     jmp return
 
 run:
-    call skip_space
     mov cl, 0
     call argc_file
     test cl, cl
@@ -938,7 +926,6 @@ break:
     jmp return
 
 time:
-    call skip_space
     jmp bcd
 
 bcd:
@@ -1006,7 +993,6 @@ write:
     mov al, 0
     mov [command], al
 
-    call skip_space
     mov cl, 0
     call argc_file
     test cl, cl
@@ -1267,7 +1253,6 @@ line_done:
     ret
 
 read:
-    call skip_space
     mov cl, 0
     call argc_file
     test cl, cl
@@ -1442,8 +1427,6 @@ cmd_table:
 
 cmd_end:
 
-%include "../src/compiler.asm"
-
 lower:
     times 0x10 db 0
     db 0xa9, 0xe6, 0xe3, 0xaa, 0xa5, 0xad, 0xa3, 0xe8, 0xe9, 0xa7, 0xe5, 0xeA, 0, 0, 0xe4, 0xeb
@@ -1459,5 +1442,7 @@ upper:
     times 0xc0 db 0
 
 font: incbin "../src/cp866-8x16.fnt"
+
+%include "../src/compiler.asm"
 
 times 32768-($-$$) db 0

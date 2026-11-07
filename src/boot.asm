@@ -11,3 +11,5 @@ jmp 0x7e00
     
 times 510-($-$$) db 0 
 dw 0xaa55
+
+%include "../src/kernel.asm"
