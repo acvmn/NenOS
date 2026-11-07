@@ -858,10 +858,20 @@ dir_next:
     jmp return
 
 help:
-
     mov si, available_commands
     call print
-    
+    jmp return
+
+mem:
+    mov si, memory
+    call print
+    xor ax, ax
+    xor dx, dx
+    mov ax, 0xe801
+    int 0x15
+    call number
+    mov si, enter
+    call print
     jmp return
 
 reboot:
@@ -870,7 +880,6 @@ reboot:
 run_error:
     mov si, not_bin
     call print
-
     jmp return
 
 run:
@@ -1382,7 +1391,8 @@ exists: db "Already exists.", 13, 0
 not_found: db "Not found.", 13, 0
 dir_list: db "Directory:", 13, 0
 dir_tab: db "   ", 0
-available_commands: db "Available Commands:", 13, "   1. BUILD <from> <to> - compile to binary.", 13, "   2. CALC <sample> - calculate.", 13, "   3. CLS - clear the screen.", 13, "   4. COPY <from> <to> - copy the document.", 13, "   5. CREATE <name> - create the document.", 13, "   6. DELETE <name> - delete the document.", 13, "   7. DIR - show directory.", 13, "   8. HELP - displaying available commands.", 13, "   9. READ <name> - read the document.", 13, "  10. REBOOT - reboot the computer.", 13, "  11. RUN <name> - run binary.", 13, "  12. TIME - launches the watch app.", 13, "  13. WRITE <name> - write the document.", 13, 0
+available_commands: db "Available Commands:", 13, "   1. BUILD <from> <to> - compile to binary.", 13, "   2. CALC <sample> - calculate.", 13, "   3. CLS - clear the screen.", 13, "   4. COPY <from> <to> - copy the document.", 13, "   5. CREATE <name> - create the document.", 13, "   6. DELETE <name> - delete the document.", 13, "   7. DIR - show directory.", 13, "   8. HELP - displaying available commands.", 13, "   9. MEM - displaying available memory.", 13, "  10. READ <name> - read the document.", 13, "  11. REBOOT - reboot the computer.", 13, "  12. RUN <name> - run binary.", 13, "  13. TIME - launches the watch app.", 13, "  14. WRITE <name> - write the document.", 13, 0
+memory: db "Available memory: ", 0
 readed: db "Document:", 13, 0
 not_bin: db "Not binary file.", 13, 0
 press_esc: db "Press <ESC> to save.", 13, 0
@@ -1404,6 +1414,7 @@ command_create: db "create", 0
 command_delete: db "delete", 0
 command_dir: db "dir", 0
 command_help: db "help", 0
+command_mem: db "mem", 0
 command_read: db "read", 0
 command_reboot: db "reboot", 0
 command_run: db "run", 0
@@ -1420,6 +1431,7 @@ cmd_table:
     dw command_dir, dir, 3
     dw command_help, help, 4
     dw command_read, read, 4
+    dw command_mem, mem, 3
     dw command_reboot, reboot, 6
     dw command_run, run, 3
     dw command_time, time, 4
