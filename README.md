@@ -50,7 +50,7 @@ The built‑in NenOS assembler currently supports the:
 
 This allows you to write simple programs using the WRITE command, compile them using the BUILD command, and run them using the RUN command.
 
-## Code examples:
+## Code examples
 ```
 db 0xb0, 0x21, 0xb4, 0x0e, 0xcd, 0c10
 ```
